@@ -20,7 +20,7 @@
     "dashboard:dev": "dotenv -- cd apps/dashboard; bun run dev"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.1.2",
+    "@biomejs/biome": "2.2.5",
     "@types/bun": "latest",
     "@typescript/native-preview": "^7.0.0-dev.20250921.1",
     "dotenv-cli": "^10.0.0",
