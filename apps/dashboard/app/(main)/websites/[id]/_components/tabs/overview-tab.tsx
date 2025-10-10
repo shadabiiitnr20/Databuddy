@@ -32,6 +32,7 @@ import {
 } from '@/components/table/rows';
 import { useBatchDynamicQuery } from '@/hooks/use-dynamic-query';
 import { getUserTimezone } from '@/lib/timezone';
+import { useDateFilters } from '@/hooks/use-date-filters';
 import {
 	metricVisibilityAtom,
 	toggleMetricAtom,
@@ -52,6 +53,7 @@ const CustomEventsSection = dynamic(() =>
 
 interface ChartDataPoint {
 	date: string;
+	rawDate?: string;
 	pageviews?: number;
 	visitors?: number;
 	sessions?: number;
@@ -142,10 +144,14 @@ export function WebsiteOverviewTab({
 		[]
 	);
 
+	const { setDateRangeAction } = useDateFilters();
+
 	const previousPeriodRange = useMemo(
 		() => calculatePreviousPeriod(dateRange),
 		[dateRange, calculatePreviousPeriod]
 	);
+
+	const [visibleMetrics] = useAtom(metricVisibilityAtom);
 
 	const queries = [
 		{
@@ -241,26 +247,6 @@ export function WebsiteOverviewTab({
 			getDataForQuery('overview-custom-events', 'outbound_domains') || [],
 	};
 
-	const [visibleMetrics] = useAtom(metricVisibilityAtom);
-	const [, toggleMetricAction] = useAtom(toggleMetricAtom);
-
-	const toggleMetric = useCallback(
-		(metric: string) => {
-			if (metric in visibleMetrics) {
-				toggleMetricAction(metric as keyof typeof visibleMetrics);
-			}
-		},
-		[visibleMetrics, toggleMetricAction]
-	);
-
-	const hiddenMetrics = useMemo(() => {
-		const result: Record<string, boolean> = {};
-		for (const key of Object.keys(visibleMetrics)) {
-			result[key] = !visibleMetrics[key as keyof typeof visibleMetrics];
-		}
-		return result;
-	}, [visibleMetrics]);
-
 	const createPercentageCell = () => (info: CellInfo) => {
 		const percentage = info.getValue() as number;
 		return <PercentageBadge percentage={percentage} />;
@@ -355,32 +341,22 @@ export function WebsiteOverviewTab({
 	);
 
 	const chartData = useMemo(() => {
-		if (!analytics.events_by_date?.length) {
-			return [];
-		}
+		if (!analytics.events_by_date?.length) return [];
+
 		const filteredEvents = filterFutureEvents(analytics.events_by_date);
-		return filteredEvents.map((event: MetricPoint): ChartDataPoint => {
-			const filtered: ChartDataPoint = {
-				date: formatDateByGranularity(event.date, dateRange.granularity),
-			};
-			if (visibleMetrics.pageviews) {
-				filtered.pageviews = event.pageviews as number;
-			}
-			if (visibleMetrics.visitors) {
-				filtered.visitors =
-					(event.visitors as number) || (event.unique_visitors as number) || 0;
-			}
-			if (visibleMetrics.sessions) {
-				filtered.sessions = event.sessions as number;
-			}
-			if (visibleMetrics.bounce_rate) {
-				filtered.bounce_rate = event.bounce_rate as number;
-			}
-			if (visibleMetrics.avg_session_duration) {
-				filtered.avg_session_duration = event.avg_session_duration as number;
-			}
-			return filtered;
-		});
+		return filteredEvents.map((event: MetricPoint): ChartDataPoint => ({
+			date: formatDateByGranularity(event.date, dateRange.granularity),
+			rawDate: event.date,
+			...(visibleMetrics.pageviews && { pageviews: event.pageviews as number }),
+			...(visibleMetrics.visitors && { 
+				visitors: (event.visitors as number) || (event.unique_visitors as number) || 0 
+			}),
+			...(visibleMetrics.sessions && { sessions: event.sessions as number }),
+			...(visibleMetrics.bounce_rate && { bounce_rate: event.bounce_rate as number }),
+			...(visibleMetrics.avg_session_duration && { 
+				avg_session_duration: event.avg_session_duration as number 
+			}),
+		}));
 	}, [
 		analytics.events_by_date,
 		dateRange.granularity,
@@ -389,37 +365,32 @@ export function WebsiteOverviewTab({
 	]);
 
 	const miniChartData = useMemo(() => {
-		if (!analytics.events_by_date?.length) {
-			return {};
-		}
+		if (!analytics.events_by_date?.length) return {};
+
 		const filteredEvents = filterFutureEvents(analytics.events_by_date);
 		const createChartSeries = (
 			field: keyof MetricPoint,
 			transform?: (value: number) => number
 		) =>
 			filteredEvents.map((event: MetricPoint) => ({
-				date:
-					dateRange.granularity === 'hourly'
-						? event.date
-						: event.date.slice(0, 10),
-				value: transform
-					? transform(event[field] as number)
-					: (event[field] as number) || 0,
+				date: dateRange.granularity === 'hourly' ? event.date : event.date.slice(0, 10),
+				value: transform ? transform(event[field] as number) : (event[field] as number) || 0,
 			}));
+
+		const formatSessionDuration = (value: number) => {
+			if (value < 60) return Math.round(value);
+			const minutes = Math.floor(value / 60);
+			const seconds = Math.round(value % 60);
+			return minutes * 60 + seconds;
+		};
+
 		return {
 			visitors: createChartSeries('visitors'),
 			sessions: createChartSeries('sessions'),
 			pageviews: createChartSeries('pageviews'),
 			pagesPerSession: createChartSeries('pages_per_session'),
 			bounceRate: createChartSeries('bounce_rate'),
-			sessionDuration: createChartSeries('avg_session_duration', (value) => {
-				if (value < 60) {
-					return Math.round(value);
-				}
-				const minutes = Math.floor(value / 60);
-				const seconds = Math.round(value % 60);
-				return minutes * 60 + seconds;
-			}),
+			sessionDuration: createChartSeries('avg_session_duration', formatSessionDuration),
 		};
 	}, [analytics.events_by_date, dateRange.granularity, filterFutureEvents]);
 
@@ -968,9 +939,8 @@ export function WebsiteOverviewTab({
 						className="rounded border-0"
 						data={chartData}
 						height={350}
-						hiddenMetrics={hiddenMetrics}
 						isLoading={isLoading}
-						onToggleMetric={toggleMetric}
+						onRangeSelect={setDateRangeAction}
 					/>
 				</div>
 			</div>

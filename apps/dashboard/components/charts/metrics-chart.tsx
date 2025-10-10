@@ -1,9 +1,12 @@
 import { ChartLineIcon } from '@phosphor-icons/react';
+import { useAtom } from 'jotai';
+import { useMemo, useState } from 'react';
 import {
 	Area,
 	CartesianGrid,
 	ComposedChart,
 	Legend,
+	ReferenceArea,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -23,6 +26,10 @@ import {
 	type MetricConfig,
 } from './metrics-constants';
 import { SkeletonChart } from './skeleton-chart';
+import {
+	metricVisibilityAtom,
+	toggleMetricAtom,
+} from '@/stores/jotai/chartAtoms';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
 	if (!(active && payload?.length)) {
@@ -76,6 +83,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 	);
 };
 
+interface DateRangeState {
+	startDate: Date;
+	endDate: Date;
+}
+
 interface MetricsChartProps {
 	data: ChartDataRow[] | undefined;
 	isLoading: boolean;
@@ -83,10 +95,9 @@ interface MetricsChartProps {
 	title?: string;
 	description?: string;
 	className?: string;
-	hiddenMetrics?: Record<string, boolean>;
-	onToggleMetric?: (metricKey: string) => void;
 	metricsFilter?: (metric: MetricConfig) => boolean;
 	showLegend?: boolean;
+	onRangeSelect?: (dateRange: DateRangeState) => void;
 }
 
 export function MetricsChart({
@@ -96,40 +107,86 @@ export function MetricsChart({
 	title,
 	description,
 	className,
-	hiddenMetrics = {},
-	onToggleMetric,
 	metricsFilter,
 	showLegend = true,
+	onRangeSelect,
 }: MetricsChartProps) {
 	const rawData = data || [];
+	const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+	const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
 
+	const [visibleMetrics] = useAtom(metricVisibilityAtom);
+	const [, toggleMetric] = useAtom(toggleMetricAtom);
+
+	const hiddenMetrics = useMemo(
+		() => Object.fromEntries(
+			Object.entries(visibleMetrics).map(([key, visible]) => [key, !visible])
+		),
+		[visibleMetrics]
+	);
+
+	const DEFAULT_METRICS = ['pageviews', 'visitors', 'sessions', 'bounce_rate', 'avg_session_duration'];
+	
 	const metrics = metricsFilter
 		? METRICS.filter(metricsFilter)
-		: METRICS.filter((metric) =>
-				[
-					'pageviews',
-					'visitors',
-					'sessions',
-					'bounce_rate',
-					'avg_session_duration',
-				].includes(metric.key)
-			);
+		: METRICS.filter((metric) => DEFAULT_METRICS.includes(metric.key));
 
 	const chartData = rawData.map((item, index) => {
-		const isFutureOrCurrent = index === rawData.length - 1;
-		const connectsToFuture = index === rawData.length - 2;
+		const isLastPoint = index === rawData.length - 1;
+		const isSecondToLast = index === rawData.length - 2;
 
 		const result = { ...item };
 		for (const metric of metrics) {
-			result[`${metric.key}_historical`] = isFutureOrCurrent
-				? null
-				: item[metric.key];
-			if (isFutureOrCurrent || connectsToFuture) {
+			result[`${metric.key}_historical`] = isLastPoint ? null : item[metric.key];
+			if (isLastPoint || isSecondToLast) {
 				result[`${metric.key}_future`] = item[metric.key];
 			}
 		}
 		return result;
 	});
+
+	const handleMouseDown = (e: any) => {
+		if (!e?.activeLabel) return;
+		setRefAreaLeft(e.activeLabel);
+		setRefAreaRight(null);
+	};
+
+	const handleMouseMove = (e: any) => {
+		if (!(refAreaLeft && e?.activeLabel)) return;
+		setRefAreaRight(e.activeLabel);
+	};
+
+	const handleMouseUp = () => {
+		if (!(refAreaLeft && refAreaRight && onRangeSelect)) {
+			setRefAreaLeft(null);
+			setRefAreaRight(null);
+			return;
+		}
+
+		const leftIndex = chartData.findIndex((d) => d.date === refAreaLeft);
+		const rightIndex = chartData.findIndex((d) => d.date === refAreaRight);
+
+		if (leftIndex === -1 || rightIndex === -1) {
+			setRefAreaLeft(null);
+			setRefAreaRight(null);
+			return;
+		}
+
+		const [startIndex, endIndex] = leftIndex < rightIndex 
+			? [leftIndex, rightIndex] 
+			: [rightIndex, leftIndex];
+		
+		const startDateStr = (chartData[startIndex] as any).rawDate || chartData[startIndex].date;
+		const endDateStr = (chartData[endIndex] as any).rawDate || chartData[endIndex].date;
+		
+		onRangeSelect({ 
+			startDate: new Date(startDateStr), 
+			endDate: new Date(endDateStr) 
+		});
+
+		setRefAreaLeft(null);
+		setRefAreaRight(null);
+	};
 
 	if (isLoading) {
 		return <SkeletonChart className="w-full" height={height} title={title} />;
@@ -178,8 +235,13 @@ export function MetricsChart({
 		<Card className={cn('w-full overflow-hidden rounded-none p-0', className)}>
 			<CardContent className="p-0">
 				<div
-					className="relative"
-					style={{ width: '100%', height: height + 20 }}
+					className="relative select-none"
+					style={{ 
+						width: '100%', 
+						height: height + 20,
+						userSelect: refAreaLeft ? 'none' : 'auto',
+						WebkitUserSelect: refAreaLeft ? 'none' : 'auto',
+					}}
 				>
 					<ResponsiveContainer height="100%" width="100%">
 						<ComposedChart
@@ -190,6 +252,9 @@ export function MetricsChart({
 								left: 20,
 								bottom: chartData.length > 5 ? 60 : 20,
 							}}
+							onMouseDown={handleMouseDown}
+							onMouseMove={handleMouseMove}
+							onMouseUp={handleMouseUp}
 						>
 							<defs>
 								{metrics.map((metric) => (
@@ -236,6 +301,15 @@ export function MetricsChart({
 								content={<CustomTooltip />}
 								cursor={{ stroke: 'var(--primary)', strokeDasharray: '4 4' }}
 							/>
+							{refAreaLeft && refAreaRight && (
+								<ReferenceArea
+									x1={refAreaLeft}
+									x2={refAreaRight}
+									strokeOpacity={0.3}
+									fill="var(--primary)"
+									fillOpacity={0.15}
+								/>
+							)}
 							{showLegend && (
 								<Legend
 									align="center"
@@ -258,8 +332,8 @@ export function MetricsChart({
 										const metric = metrics.find(
 											(m) => m.label === payload.value
 										);
-										if (metric && onToggleMetric) {
-											onToggleMetric(metric.key);
+										if (metric) {
+											toggleMetric(metric.key as keyof typeof visibleMetrics);
 										}
 									}}
 									verticalAlign="bottom"
