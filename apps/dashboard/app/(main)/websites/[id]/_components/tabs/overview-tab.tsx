@@ -319,53 +319,42 @@ export function WebsiteOverviewTab({
 	const dateTo = dayjs(dateRange.end_date);
 	const dateDiff = dateTo.diff(dateFrom, 'day');
 
-	const filterFutureEvents = useCallback(
-		(events: MetricPoint[]) => {
-			const userTimezone = getUserTimezone();
-			const now = dayjs().tz(userTimezone);
-
-			return events.filter((event: MetricPoint) => {
-				const eventDate = dayjs.utc(event.date).tz(userTimezone);
-
-				if (dateRange.granularity === 'hourly') {
-					return eventDate.isBefore(now);
-				}
-
-				const endOfToday = now.endOf('day');
-				return (
-					eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day')
-				);
-			});
-		},
-		[dateRange.granularity]
-	);
-
-	const fillMissingDates = useCallback((data: MetricPoint[]) => {
-		const userTimezone = getUserTimezone();
-		const isHourly = dateRange.granularity === 'hourly';
+	const processedEventsData = useMemo(() => {
+		if (!analytics.events_by_date?.length) return [];
 		
-		// Create a map of existing data for quick lookup
+		const userTimezone = getUserTimezone();
+		const now = dayjs().tz(userTimezone);
+		const isHourly = dateRange.granularity === 'hourly';
+
+		// Step 1: Filter future events
+		const filteredEvents = analytics.events_by_date.filter((event: MetricPoint) => {
+			const eventDate = dayjs.utc(event.date).tz(userTimezone);
+
+			if (isHourly) {
+				return eventDate.isBefore(now);
+			}
+
+			const endOfToday = now.endOf('day');
+			return eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day');
+		});
+
+		// Step 2: Create lookup map
 		const dataMap = new Map<string, MetricPoint>();
-		for (const item of data) {
+		for (const item of filteredEvents) {
 			const key = isHourly ? item.date : item.date.slice(0, 10);
 			dataMap.set(key, item);
 		}
 
-		// Generate all dates in range
+		// Step 3: Fill missing dates
 		const startDate = dayjs(dateRange.start_date).tz(userTimezone);
 		const endDate = dayjs(dateRange.end_date).tz(userTimezone);
-		const now = dayjs().tz(userTimezone);
-		
 		const filled: MetricPoint[] = [];
 		let current = startDate;
 
 		while (current.isBefore(endDate) || current.isSame(endDate, 'day')) {
 			if (isHourly) {
-				// Hourly granularity - iterate through hours
 				for (let hour = 0; hour < 24; hour++) {
 					const hourDate = current.hour(hour);
-					
-					// Don't add future hours
 					if (hourDate.isAfter(now)) break;
 					
 					const key = hourDate.format('YYYY-MM-DD HH:00:00');
@@ -383,11 +372,8 @@ export function WebsiteOverviewTab({
 					});
 				}
 				current = current.add(1, 'day');
-				
-				// If we've reached today, stop after processing current hour
 				if (current.isAfter(endDate, 'day')) break;
 			} else {
-				// Daily granularity
 				const key = current.format('YYYY-MM-DD');
 				const existing = dataMap.get(key);
 				
@@ -407,15 +393,15 @@ export function WebsiteOverviewTab({
 		}
 
 		return filled;
-	}, [dateRange.start_date, dateRange.end_date, dateRange.granularity]);
+	}, [
+		analytics.events_by_date,
+		dateRange.start_date,
+		dateRange.end_date,
+		dateRange.granularity,
+	]);
 
 	const chartData = useMemo(() => {
-		const filteredEvents = analytics.events_by_date?.length 
-			? filterFutureEvents(analytics.events_by_date) 
-			: [];
-		const filledEvents = fillMissingDates(filteredEvents);
-		
-		return filledEvents.map((event: MetricPoint): ChartDataPoint => ({
+		return processedEventsData.map((event: MetricPoint): ChartDataPoint => ({
 			date: formatDateByGranularity(event.date, dateRange.granularity),
 			rawDate: event.date,
 			...(visibleMetrics.pageviews && { pageviews: event.pageviews as number }),
@@ -428,27 +414,14 @@ export function WebsiteOverviewTab({
 				avg_session_duration: event.avg_session_duration as number 
 			}),
 		}));
-	}, [
-		analytics.events_by_date,
-		dateRange.granularity,
-		dateRange.start_date,
-		dateRange.end_date,
-		visibleMetrics,
-		filterFutureEvents,
-		fillMissingDates,
-	]);
+	}, [processedEventsData, dateRange.granularity, visibleMetrics]);
 
 	const miniChartData = useMemo(() => {
-		const filteredEvents = analytics.events_by_date?.length 
-			? filterFutureEvents(analytics.events_by_date) 
-			: [];
-		const filledEvents = fillMissingDates(filteredEvents);
-		
 		const createChartSeries = (
 			field: keyof MetricPoint,
 			transform?: (value: number) => number
 		) =>
-			filledEvents.map((event: MetricPoint) => ({
+			processedEventsData.map((event: MetricPoint) => ({
 				date: dateRange.granularity === 'hourly' ? event.date : event.date.slice(0, 10),
 				value: transform ? transform(event[field] as number) : (event[field] as number) || 0,
 			}));
@@ -468,7 +441,7 @@ export function WebsiteOverviewTab({
 			bounceRate: createChartSeries('bounce_rate'),
 			sessionDuration: createChartSeries('avg_session_duration', formatSessionDuration),
 		};
-	}, [analytics.events_by_date, dateRange.granularity, filterFutureEvents, fillMissingDates]);
+	}, [processedEventsData, dateRange.granularity]);
 
 	const createTechnologyCell = (type: 'browser' | 'os') => (info: CellInfo) => {
 		const entry = info.row.original as TechnologyData;
