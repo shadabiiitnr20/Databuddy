@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDbConnections } from '@/hooks/use-db-connections';
-import { useAccordionStates } from '@/hooks/use-persistent-state';
+import { useAccordionStates, usePersistentState } from '@/hooks/use-persistent-state';
 import { useWebsites } from '@/hooks/use-websites';
 import { cn } from '@/lib/utils';
 import { CategorySidebar } from './category-sidebar';
@@ -38,7 +38,7 @@ type NavigationConfig = {
 export function Sidebar() {
 	const pathname = usePathname();
 	const [isMobileOpen, setIsMobileOpen] = useState(false);
-	const [selectedCategory, setSelectedCategory] = useState<string>();
+	const [selectedCategory, setSelectedCategory] = usePersistentState<string | undefined>('sidebar-selected-category', undefined);
 	const { websites, isLoading: isLoadingWebsites } = useWebsites();
 	const { connections: databases, isLoading: isLoadingDatabases } =
 		useDbConnections();

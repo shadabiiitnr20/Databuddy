@@ -1,48 +1,38 @@
-// Core navigation icons
 import {
-	// Basic UI
 	EyeIcon,
 	GearIcon,
 	PlusIcon,
-	// Charts & Analytics
 	ChartBarIcon,
 	ChartLineUpIcon,
 	ChartPieIcon,
 	TrendUpIcon,
 	ActivityIcon,
 	PulseIcon,
-	// Users & Teams
 	UserIcon,
 	UserCircleIcon,
 	UsersThreeIcon,
 	UserGearIcon,
 	IdentificationCardIcon,
-	// Navigation & Structure
 	GlobeIcon,
 	GlobeSimpleIcon,
 	BuildingsIcon,
 	MonitorIcon,
 	NetworkIcon,
-	// Content & Media
 	BookOpenIcon,
 	PlayIcon,
 	RoadHorizonIcon,
 	SpeakerHighIcon,
-	// Security & Settings
 	ShieldCheckIcon,
 	KeyIcon,
 	PlugIcon,
-	// Data & Storage
 	DatabaseIcon,
 	TableIcon,
 	FileArrowDownIcon,
 	MagnifyingGlassIcon,
-	// Commerce & Business
 	CreditCardIcon,
 	CurrencyDollarIcon,
 	ReceiptIcon,
 	StorefrontIcon,
-	// Features & Tools
 	FlagIcon,
 	FunnelIcon,
 	TargetIcon,
@@ -50,13 +40,11 @@ import {
 	LightningIcon,
 	BugIcon,
 	MapPinIcon,
-	// Status & Alerts
 	WarningIcon,
 	CalendarIcon,
 } from '@phosphor-icons/react';
 import type { Category, NavigationSection } from './types';
-
-// Helper function to create navigation items
+	
 const createNavItem = (
 	name: string,
 	icon: any,
@@ -70,7 +58,6 @@ const createNavItem = (
 	...options,
 });
 
-// Helper function to create navigation sections
 const createNavSection = (
 	title: string,
 	icon: any,
@@ -86,7 +73,6 @@ export const filterCategoriesForRoute = (categories: Category[], pathname: strin
 	return categories.filter(category => !(category.hideFromDemo && isDemo));
 };
 
-// Generic dynamic navigation creator
 const createDynamicNavigation = <T extends { id: string; name: string | null }>(
 	items: T[],
 	title: string,
@@ -233,7 +219,6 @@ export const websiteSettingsNavigation: NavigationSection[] = [
 	]),
 ];
 
-// Helper to create category config
 const createCategoryConfig = (
 	categories: Category[],
 	defaultCategory: string,
@@ -282,7 +267,6 @@ export const categoryConfig = {
 	),
 };
 
-// Pathname-based config resolution
 const PATH_CONFIG_MAP = [
 	{ pattern: ['/websites/', '/demo/'], config: 'website' as const },
 	{ pattern: ['/observability/database/'], config: 'database' as const, exclude: ['/observability/database', '/observability/database/'] },
@@ -315,7 +299,6 @@ export const getDefaultCategory = (pathname: string) => {
 	return getContextConfig(pathname).defaultCategory;
 };
 
-// Generic loading navigation creator
 const createLoadingNavigation = (
 	title: string,
 	titleIcon: any,
