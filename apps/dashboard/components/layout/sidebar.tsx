@@ -121,10 +121,11 @@ export function Sidebar() {
 		let currentId: string | null | undefined;
 
 		if (isWebsite || isDemo) {
-			headerComponent = isWebsite ? (
-				<WebsiteHeader website={currentWebsite} />
-			) : (
-				<OrganizationSelector />
+			headerComponent = (
+				<WebsiteHeader
+					website={currentWebsite}
+					showBackButton={!isDemo}
+				/>
 			);
 			currentId = websiteId;
 		} else if (isDatabase) {

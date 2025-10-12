@@ -29,14 +29,18 @@ import {
 	SpeakerHighIcon,
 	TableIcon,
 	TargetIcon,
-	TestTubeIcon,
 	UserCircleIcon,
 	UserIcon,
 	UsersIcon,
 	UsersThreeIcon,
 	WarningIcon,
 } from '@phosphor-icons/react';
-import type { NavigationSection } from './types';
+import type { Category, NavigationSection } from './types';
+
+export const filterCategoriesForRoute = (categories: Category[], pathname: string) => {
+	const isDemo = pathname.startsWith('/demo');
+	return categories.filter(category => !(category.hideFromDemo && isDemo));
+};
 
 export const createWebsitesNavigation = (
 	websites: Array<{ id: string; name: string | null; domain: string }>
@@ -383,6 +387,7 @@ export const websiteNavigation: NavigationSection[] = [
 				icon: RabbitIcon,
 				href: '/assistant',
 				alpha: true,
+				hideFromDemo: true,
 			},
 		],
 	},
@@ -412,20 +417,11 @@ export const websiteSettingsNavigation: NavigationSection[] = [
 	},
 ];
 
-export const createDemoNavigation = (): NavigationSection[] => [
-	{
-		title: 'Demo Analytics',
-		icon: TestTubeIcon,
-		items: [
-			{ name: 'Live Demo', icon: EyeIcon, href: '' },
-			{ name: 'Sample Sessions', icon: UserIcon, href: '/sessions' },
-			{ name: 'User Profiles', icon: UserCircleIcon, href: '/profiles' },
-			{ name: 'Location Data', icon: MapPinIcon, href: '/map' },
-		],
-	},
-];
-
-export const categoryConfig = {
+export const categoryConfig: Record<string, {
+	categories: Category[];
+	defaultCategory: string;
+	navigationMap: Record<string, NavigationSection[]>;
+}> = {
 	main: {
 		categories: [
 			{ id: 'websites', name: 'Websites', icon: GlobeIcon, production: true },
@@ -447,7 +443,7 @@ export const categoryConfig = {
 				icon: HandEyeIcon,
 				production: false,
 			},
-			{ id: 'settings', name: 'Settings', icon: GearIcon, production: true },
+			{ id: 'settings', name: 'Settings', icon: GearIcon, production: true, hideFromDemo: true },
 			{
 				id: 'resources',
 				name: 'Resources',
@@ -478,6 +474,7 @@ export const categoryConfig = {
 				name: 'Settings',
 				icon: GearIcon,
 				production: true,
+				hideFromDemo: true,
 			},
 		],
 		defaultCategory: 'analytics',
@@ -500,19 +497,10 @@ export const categoryConfig = {
 			monitoring: databaseNavigation, // All database sections in one category
 		},
 	},
-	demo: {
-		categories: [
-			{ id: 'demo', name: 'Demo', icon: TestTubeIcon, production: true },
-		],
-		defaultCategory: 'demo',
-		navigationMap: {
-			demo: createDemoNavigation(),
-		},
-	},
-} as const;
+};
 
 export const getContextConfig = (pathname: string) => {
-	if (pathname.startsWith('/websites/')) {
+	if (pathname.startsWith('/websites/') || pathname.startsWith('/demo/')) {
 		return categoryConfig.website;
 	}
 	if (
@@ -521,9 +509,6 @@ export const getContextConfig = (pathname: string) => {
 		pathname !== '/observability/database/'
 	) {
 		return categoryConfig.database;
-	}
-	if (pathname.startsWith('/demo/')) {
-		return categoryConfig.demo;
 	}
 	return categoryConfig.main;
 };
