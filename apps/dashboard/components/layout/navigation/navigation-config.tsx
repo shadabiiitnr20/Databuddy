@@ -196,40 +196,40 @@ export const observabilityNavigation: NavigationSection[] = [
 
 export const databaseNavigation: NavigationSection[] = [
 	createNavSection('Database Monitoring', MonitorIcon, [
-		createNavItem('Overview', EyeIcon, ''),
-		createNavItem('Performance', PulseIcon, '/performance'),
-		createNavItem('Queries', MagnifyingGlassIcon, '/queries'),
-		createNavItem('Tables', TableIcon, '/tables'),
-		createNavItem('Online Advisor', LightningIcon, '/online-advisor'),
+		createNavItem('Overview', EyeIcon, '', { rootLevel: false }),
+		createNavItem('Performance', PulseIcon, '/performance', { rootLevel: false }),
+		createNavItem('Queries', MagnifyingGlassIcon, '/queries', { rootLevel: false }),
+		createNavItem('Tables', TableIcon, '/tables', { rootLevel: false }),
+		createNavItem('Online Advisor', LightningIcon, '/online-advisor', { rootLevel: false }),
 	]),
 	createNavSection('Configuration', GearIcon, [
-		createNavItem('Connection Settings', PlugIcon, '/settings'),
-		createNavItem('Monitoring Settings', MonitorIcon, '/monitoring'),
-		createNavItem('Plugin Marketplace', StorefrontIcon, '/plugins'),
+		createNavItem('Connection Settings', PlugIcon, '/settings', { rootLevel: false }),
+		createNavItem('Monitoring Settings', MonitorIcon, '/monitoring', { rootLevel: false }),
+		createNavItem('Plugin Marketplace', StorefrontIcon, '/plugins', { rootLevel: false }),
 	]),
 ];
 
 export const websiteNavigation: NavigationSection[] = [
 	createNavSection('Web Analytics', ChartBarIcon, [
-		createNavItem('Dashboard', EyeIcon, ''),
-		createNavItem('Sessions', UserIcon, '/sessions'),
-		createNavItem('Geographic Data', MapPinIcon, '/map'),
-		createNavItem('Error Tracking', BugIcon, '/errors'),
+		createNavItem('Dashboard', EyeIcon, '', { rootLevel: false }),
+		createNavItem('Sessions', UserIcon, '/sessions', { rootLevel: false }),
+		createNavItem('Geographic Data', MapPinIcon, '/map', { rootLevel: false }),
+		createNavItem('Error Tracking', BugIcon, '/errors', { rootLevel: false }),
 	]),
 	createNavSection('Product Analytics', TrendUpIcon, [
-		createNavItem('User Profiles', UserCircleIcon, '/profiles'),
-		createNavItem('Funnels', FunnelIcon, '/funnels'),
-		createNavItem('Goals', TargetIcon, '/goals'),
-		createNavItem('Feature Flags', FlagIcon, '/flags', { alpha: true }),
-		createNavItem('Databunny AI', RobotIcon, '/assistant', { alpha: true, hideFromDemo: true }),
+		createNavItem('User Profiles', UserCircleIcon, '/profiles', { rootLevel: false }),
+		createNavItem('Funnels', FunnelIcon, '/funnels', { rootLevel: false }),
+		createNavItem('Goals', TargetIcon, '/goals', { rootLevel: false }),
+		createNavItem('Feature Flags', FlagIcon, '/flags', { alpha: true, rootLevel: false }),
+		createNavItem('Databunny AI', RobotIcon, '/assistant', { alpha: true, hideFromDemo: true, rootLevel: false }),
 	]),
 ];
 
 export const websiteSettingsNavigation: NavigationSection[] = [
 	createNavSection('Website Settings', GearIcon, [
-		createNavItem('General Settings', GearIcon, '/settings/general'),
-		createNavItem('Privacy Settings', ShieldCheckIcon, '/settings/privacy'),
-		createNavItem('Data Export', FileArrowDownIcon, '/settings/export'),
+		createNavItem('General Settings', GearIcon, '/settings/general', { rootLevel: false }),
+		createNavItem('Privacy Settings', ShieldCheckIcon, '/settings/privacy', { rootLevel: false }),
+		createNavItem('Data Export', FileArrowDownIcon, '/settings/export', { rootLevel: false }),
 	]),
 ];
 
