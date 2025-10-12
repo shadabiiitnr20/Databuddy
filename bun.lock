@@ -3,6 +3,9 @@
   "workspaces": {
     "": {
       "name": "databuddy",
+      "dependencies": {
+        "prettier": "^3.6.2",
+      },
       "devDependencies": {
         "@biomejs/biome": "2.2.5",
         "@types/bun": "latest",
