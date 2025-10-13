@@ -857,7 +857,7 @@
 				return;
 			}
 
-			if (this.isBot()) {
+			if (this.isLikelyBot) {
 				return;
 			}
 
