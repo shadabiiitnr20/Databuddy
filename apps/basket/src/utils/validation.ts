@@ -36,6 +36,14 @@ export const VALIDATION_LIMITS = {
 	EVENT_ID_MAX_LENGTH: 512,
 } as const;
 
+export const FILTERED_ERROR_MESSAGES = new Set([
+	'Script error.',
+	'Non-Error promise rejection captured',
+	'ResizeObserver loop limit exceeded',
+	'Loading chunk',
+	'ChunkLoadError',
+]);
+
 export const SAFE_HEADERS = new Set([
 	'user-agent',
 	'referer',

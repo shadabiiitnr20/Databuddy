@@ -25,6 +25,7 @@ import { detectBot, parseUserAgent } from '../utils/user-agent';
 import {
 	sanitizeString,
 	VALIDATION_LIMITS,
+	FILTERED_ERROR_MESSAGES,
 	validatePayloadSize,
 	validatePerformanceMetric,
 	validateSessionId,
@@ -170,6 +171,12 @@ async function insertError(
 	userAgent: string,
 	ip: string
 ): Promise<void> {
+	const payload = errorData.payload;
+	
+	if (FILTERED_ERROR_MESSAGES.has(payload.message)) {
+		return;
+	}
+
 	let eventId = sanitizeString(
 		errorData.payload.eventId,
 		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
@@ -182,8 +189,6 @@ async function insertError(
 	if (await checkDuplicate(eventId, 'error')) {
 		return;
 	}
-
-	const payload = errorData.payload;
 	const now = Date.now();
 
 	const { anonymizedIP, country, region } = await getGeo(ip);
