@@ -171,12 +171,6 @@ async function insertError(
 	userAgent: string,
 	ip: string
 ): Promise<void> {
-	const payload = errorData.payload;
-	
-	if (FILTERED_ERROR_MESSAGES.has(payload.message)) {
-		return;
-	}
-
 	let eventId = sanitizeString(
 		errorData.payload.eventId,
 		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
@@ -189,6 +183,8 @@ async function insertError(
 	if (await checkDuplicate(eventId, 'error')) {
 		return;
 	}
+
+	const payload = errorData.payload;
 	const now = Date.now();
 
 	const { anonymizedIP, country, region } = await getGeo(ip);
@@ -725,7 +721,10 @@ const app = new Elysia()
 			}
 
 			if (eventType === 'error') {
-				// Check for bots before processing error events
+				if (FILTERED_ERROR_MESSAGES.has(body.payload?.message)) {
+					return { status: 'ignored', type: 'error', reason: 'filtered_message' };
+				}
+
 				const botError = await checkForBot(
 					request,
 					body,
@@ -978,6 +977,15 @@ const app = new Elysia()
 					}
 				}
 				if (eventType === 'error') {
+					// Skip filtered error messages as they provide no useful information
+					if (FILTERED_ERROR_MESSAGES.has(event.payload?.message)) {
+						return {
+							status: 'ignored',
+							type: 'error',
+							reason: 'filtered_message',
+						};
+					}
+
 					// Check for bots before processing error events
 					const botError = await checkForBot(
 						request,
