@@ -12,7 +12,6 @@ import { redis } from '@databuddy/redis';
 import { Autumn as autumn } from 'autumn-js';
 import { Elysia } from 'elysia';
 import { getWebsiteByIdV2, isValidOrigin } from '../hooks/auth';
-import { logger } from '../lib/logger';
 import {
 	analyticsEventSchema,
 	customEventSchema,
@@ -236,10 +235,10 @@ async function insertError(
 			format: 'JSONEachRow',
 		});
 	} catch (err) {
-		logger.error('Failed to insert error event', {
-			error: err as Error,
-			eventId,
-		});
+		// logger.error('Failed to insert error event', {
+		// 	error: err as Error,
+		// 	eventId,
+		// });
 		throw err;
 	}
 }
@@ -304,10 +303,10 @@ async function insertWebVitals(
 			format: 'JSONEachRow',
 		});
 	} catch (err) {
-		logger.error('Failed to insert web vitals event', {
-			error: err as Error,
-			eventId,
-		});
+		// logger.error('Failed to insert web vitals event', {
+		// 	error: err as Error,
+		// 	eventId,
+		// });
 		throw err;
 	}
 }
@@ -359,10 +358,6 @@ async function insertCustomEvent(
 			format: 'JSONEachRow',
 		});
 	} catch (err) {
-		logger.error('Failed to insert custom event', {
-			error: err as Error,
-			eventId,
-		});
 		throw err;
 	}
 }
@@ -412,10 +407,10 @@ async function insertOutgoingLink(
 			format: 'JSONEachRow',
 		});
 	} catch (err) {
-		logger.error('Failed to insert outgoing link event', {
-			error: err as Error,
-			eventId,
-		});
+		// logger.error('Failed to insert outgoing link event', {
+		// 	error: err as Error,
+		// 	eventId,
+		// });
 		throw err;
 	}
 }
@@ -537,10 +532,10 @@ async function insertTrackEvent(
 			format: 'JSONEachRow',
 		});
 	} catch (err) {
-		logger.error('Failed to insert track event', {
-			error: err as Error,
-			eventId,
-		});
+		// logger.error('Failed to insert track event', {
+		// 	error: err as Error,
+		// 	eventId,
+		// });
 		throw err;
 	}
 }
@@ -641,16 +636,18 @@ async function logBlockedTraffic(
 				format: 'JSONEachRow',
 			})
 			.then(() => {
-				logger.info(
-					`Logged blocked traffic, origin: ${blockedEvent.origin}, reason: ${blockedEvent.block_reason}, category: ${blockedEvent.block_category}`,
-					{ blockedEvent }
-				);
+				// logger.info(
+				//	`Logged blocked traffic, origin: ${blockedEvent.origin}, reason: ${blockedEvent.block_reason}, category: ${blockedEvent.block_category}`,
+					// { blockedEvent }
+				// );
 			})
 			.catch((err) => {
-				logger.error('Failed to log blocked traffic', { error: err as Error });
+				// logger.error('Failed to log blocked traffic', { error: err as Error });
+				throw err;
 			});
 	} catch (error) {
-		logger.error('Failed to log blocked traffic', { error: error as Error });
+		// logger.error('Failed to log blocked traffic', { error: error as Error });
+		throw error;
 	}
 }
 
