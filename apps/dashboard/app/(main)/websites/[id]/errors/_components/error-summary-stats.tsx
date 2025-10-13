@@ -1,4 +1,3 @@
-import type { ErrorSummary } from '@databuddy/shared';
 import {
 	ActivityIcon,
 	TrendUpIcon,
@@ -6,6 +5,7 @@ import {
 	WarningCircleIcon,
 } from '@phosphor-icons/react';
 import { StatCard } from '@/components/analytics/stat-card';
+import type { ErrorSummary } from './types';
 
 interface ErrorSummaryStatsProps {
 	errorSummary: ErrorSummary;

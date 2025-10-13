@@ -568,23 +568,16 @@ export function useEnhancedErrorData(
 			{
 				id: 'recent_errors',
 				parameters: ['recent_errors'],
-				limit: 100,
 				filters,
 			},
-			{ id: 'error_types', parameters: ['error_types'], limit: 100, filters },
+			{ id: 'error_types', parameters: ['error_types'], filters },
 			{
 				id: 'errors_by_page',
 				parameters: ['errors_by_page'],
-				limit: 25,
 				filters,
 			},
-			{ id: 'error_trends', parameters: ['error_trends'], limit: 30, filters },
-			{
-				id: 'error_frequency',
-				parameters: ['error_frequency'],
-				limit: 30,
-				filters,
-			},
+			{ id: 'error_summary', parameters: ['error_summary'], filters },
+			{ id: 'error_chart_data', parameters: ['error_chart_data'], filters },
 		],
 		{
 			...options,

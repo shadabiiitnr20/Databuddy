@@ -26,7 +26,7 @@ export const ErrorsBuilders: Record<string, SimpleQueryConfig> = {
 		],
 		where: ["message != ''"],
 		orderBy: 'timestamp DESC',
-		limit: 100,
+		limit: 50,
 		timeField: 'timestamp',
 		allowedFilters: [
 			'path',
@@ -83,7 +83,7 @@ export const ErrorsBuilders: Record<string, SimpleQueryConfig> = {
 		where: ["message != ''", "path != ''"],
 		groupBy: ['path'],
 		orderBy: 'errors DESC',
-		limit: 25,
+		limit: 20,
 		timeField: 'timestamp',
 		allowedFilters: ['path', 'message', 'browser_name'],
 		customizable: true,
@@ -106,10 +106,25 @@ export const ErrorsBuilders: Record<string, SimpleQueryConfig> = {
 			'uniq(message) as uniqueErrorTypes',
 			'uniq(anonymous_id) as affectedUsers',
 			'uniq(session_id) as affectedSessions',
+			'0 as errorRate',
 		],
 		where: ["message != ''"],
 		timeField: 'timestamp',
 		allowedFilters: ['message', 'path', 'browser_name', 'country'],
 		customizable: true,
+	},
+
+	error_chart_data: {
+		table: Analytics.errors,
+		fields: [
+			'toDate(timestamp) as date',
+			'COUNT(*) as totalErrors',
+			'uniq(anonymous_id) as affectedUsers',
+		],
+		where: ["message != ''"],
+		groupBy: ['toDate(timestamp)'],
+		orderBy: 'date ASC',
+		timeField: 'timestamp',
+		allowedFilters: ['message', 'path', 'browser_name', 'country'],
 	},
 };

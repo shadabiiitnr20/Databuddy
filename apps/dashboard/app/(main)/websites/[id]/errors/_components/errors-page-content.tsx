@@ -1,16 +1,21 @@
 'use client';
 
-import type { ErrorEvent, ErrorSummary } from '@databuddy/shared';
-import { ArrowClockwiseIcon, BugIcon } from '@phosphor-icons/react';
+import { BugIcon } from '@phosphor-icons/react';
 import { useAtom } from 'jotai';
 import { use, useCallback, useEffect } from 'react';
-import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import { useDateFilters } from '@/hooks/use-date-filters';
 import { useEnhancedErrorData } from '@/hooks/use-dynamic-query';
 import { formatDateOnly } from '@/lib/formatters';
 import { isAnalyticsRefreshingAtom } from '@/stores/jotai/filterAtoms';
+import type {
+	ErrorChartData,
+	ErrorSummary,
+	ErrorType,
+	ErrorByPage,
+	RecentError,
+	ProcessedChartData,
+} from './types';
 import { ErrorDataTable } from './error-data-table';
 import { ErrorSummaryStats } from './error-summary-stats';
 import { ErrorTrendsChart } from './error-trends-chart';
@@ -51,42 +56,29 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 		handleRefresh();
 	}, [handleRefresh]);
 
-	const getData = (id: string): unknown[] =>
-		(errorResults?.find((r) => r.queryId === id)?.data?.[id] as unknown[]) ||
-		[];
+	const getData = <T,>(id: string): T[] =>
+		(errorResults?.find((r) => r.queryId === id)?.data?.[id] as T[]) || [];
 
-	const recentErrors = getData('recent_errors') as ErrorEvent[];
-	const errorTypes = getData('error_types');
-	const errorsByPage = getData('errors_by_page');
-	const errorTrends = getData('error_trends');
+	const recentErrors = getData<RecentError>('recent_errors');
+	const errorTypes = getData<ErrorType>('error_types');
+	const errorsByPage = getData<ErrorByPage>('errors_by_page');
+	const errorSummaryData = getData<ErrorSummary>('error_summary');
+	const errorChartData = getData<ErrorChartData>('error_chart_data');
 
-	const totalErrors = (errorTypes as Record<string, unknown>[]).reduce(
-		(sum: number, type: Record<string, unknown>) =>
-			sum + ((type.count as number) || 0),
-		0
-	);
-	const totalUsers = (errorTypes as Record<string, unknown>[]).reduce(
-		(sum: number, type: Record<string, unknown>) =>
-			sum + ((type.users as number) || 0),
-		0
-	);
-
-	const errorSummary: ErrorSummary = {
-		totalErrors,
-		uniqueErrorTypes: errorTypes.length,
-		affectedUsers: totalUsers,
-		affectedSessions: recentErrors.length,
+	const errorSummary = errorSummaryData[0] || {
+		totalErrors: 0,
+		uniqueErrorTypes: 0,
+		affectedUsers: 0,
+		affectedSessions: 0,
 		errorRate: 0,
 	};
 
-	const topError = (errorTypes as Record<string, unknown>[])[0] || null;
-	const errorChartData = (errorTrends as Record<string, unknown>[]).map(
-		(point: Record<string, unknown>) => ({
-			date: formatDateOnly(point.date as string),
-			'Total Errors': (point.errors as number) || 0,
-			'Affected Users': (point.users as number) || 0,
-		})
-	);
+	const topError = errorTypes[0] || null;
+	const processedChartData: ProcessedChartData[] = errorChartData.map((point) => ({
+		date: formatDateOnly(point.date),
+		'Total Errors': point.totalErrors || 0,
+		'Affected Users': point.affectedUsers || 0,
+	}));
 
 	if (error) {
 		return (
@@ -115,19 +107,11 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 				<div className="space-y-6">
 					<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 						<div className="lg:col-span-2">
-							<ErrorTrendsChart errorChartData={errorChartData} />
+							<ErrorTrendsChart errorChartData={processedChartData} />
 						</div>
 					<div className="space-y-4">
 						<ErrorSummaryStats errorSummary={errorSummary} />
-						<TopErrorCard
-							topError={
-								topError as {
-									name: string;
-									count: number;
-									users: number;
-								} | null
-							}
-						/>
+						<TopErrorCard topError={topError} />
 					</div>
 					</div>
 				<RecentErrorsTable recentErrors={recentErrors} />
@@ -135,8 +119,8 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 					isLoading={isLoading}
 					isRefreshing={isRefreshing}
 					processedData={{
-						error_types: errorTypes as Record<string, unknown>[],
-						errors_by_page: errorsByPage as Record<string, unknown>[],
+						error_types: errorTypes,
+						errors_by_page: errorsByPage,
 					}}
 				/>
 				</div>
