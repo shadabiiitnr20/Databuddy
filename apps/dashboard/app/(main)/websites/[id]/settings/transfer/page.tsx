@@ -132,7 +132,6 @@ function TransferPageContent() {
 
 	return (
 		<div className="flex h-full flex-col">
-			{/* Header */}
 			<div className="h-[89px] border-b">
 				<div className="flex h-full flex-col justify-center gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
 					<div className="min-w-0 flex-1">
