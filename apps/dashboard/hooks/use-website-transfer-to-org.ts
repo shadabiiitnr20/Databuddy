@@ -10,6 +10,8 @@ export function useWebsiteTransferToOrg() {
 			utils.websites.list.invalidate();
 			utils.websites.listWithCharts.invalidate();
 			utils.websites.getById.invalidate({ id: variables.websiteId });
+			
+			utils.websites.getById.refetch({ id: variables.websiteId });
 		},
 	});
 
