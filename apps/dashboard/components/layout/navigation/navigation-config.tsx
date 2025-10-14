@@ -42,6 +42,7 @@ import {
 	MapPinIcon,
 	WarningIcon,
 	CalendarIcon,
+	ArrowSquareOutIcon,
 } from '@phosphor-icons/react';
 import type { Category, NavigationSection } from './types';
 	
@@ -215,6 +216,7 @@ export const websiteSettingsNavigation: NavigationSection[] = [
 	createNavSection('Website Settings', GearIcon, [
 		createNavItem('General Settings', GearIcon, '/settings/general', { rootLevel: false }),
 		createNavItem('Privacy Settings', ShieldCheckIcon, '/settings/privacy', { rootLevel: false }),
+		createNavItem('Transfer Website', ArrowSquareOutIcon, '/settings/transfer', { rootLevel: false }),
 		createNavItem('Data Export', FileArrowDownIcon, '/settings/export', { rootLevel: false }),
 	]),
 ];
