@@ -115,15 +115,21 @@ export function MetricsChartWithAnnotations({
 			loading: 'Creating annotation...',
 			success: () => {
 				refetchAnnotations();
-				return 'Annotation created successfully';
+				return 'Annotation created successfully! 🎉';
 			},
 			error: (err) => {
 				console.error('Failed to create annotation:', err);
-				return err?.message || 'Failed to create annotation';
+				const errorMessage = err?.message || 'Failed to create annotation';
+				toast.error(`Failed to create annotation: ${errorMessage}`);
+				return errorMessage;
 			},
 		});
 
-		await promise;
+		try {
+			await promise;
+		} catch (error) {
+			console.error('Annotation creation failed:', error);
+		}
 	};
 
 	const handleEditAnnotation = (annotation: Annotation) => {

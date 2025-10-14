@@ -333,6 +333,14 @@ export function MetricsChart({
 							</div>
 						</div>
 					)}
+					
+					{!refAreaLeft && annotations.length === 0 && (
+						<div className="absolute top-4 right-4 z-10">
+							<div className="bg-muted/80 backdrop-blur-sm border border-border/50 px-3 py-2 rounded-lg text-xs text-muted-foreground shadow-sm">
+								💡 Drag on chart to create annotations
+							</div>
+						</div>
+					)}
 					<ResponsiveContainer height="100%" width="100%">
 						<ComposedChart
 							data={chartData}

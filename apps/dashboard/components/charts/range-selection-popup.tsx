@@ -10,7 +10,7 @@ import {
 	EyeIcon,
 	EyeSlashIcon,
 } from '@phosphor-icons/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
 	Card,
@@ -72,6 +72,29 @@ export function RangeSelectionPopup({
 	const [selectedColor, setSelectedColor] = useState<string>(DEFAULT_ANNOTATION_VALUES.color);
 	const [isPublic, setIsPublic] = useState<boolean>(DEFAULT_ANNOTATION_VALUES.isPublic);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				onClose();
+			} else if (e.key === 'Enter' && e.ctrlKey && showAnnotationForm) {
+				e.preventDefault();
+				handleCreateAnnotation();
+			} else if (e.key === 'z' && e.ctrlKey && !showAnnotationForm) {
+				e.preventDefault();
+				handleZoom();
+			} else if (e.key === 'a' && e.ctrlKey && !showAnnotationForm) {
+				e.preventDefault();
+				setShowAnnotationForm(true);
+			}
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+		return () => document.removeEventListener('keydown', handleKeyDown);
+	}, [isOpen, showAnnotationForm]);
 
 	const handleZoom = () => {
 		onZoom(dateRange);
@@ -90,10 +113,11 @@ export function RangeSelectionPopup({
 
 		const validation = validateAnnotationForm(formData);
 		if (!validation.isValid) {
-			console.error('Validation errors:', validation.errors);
+			setValidationErrors(validation.errors);
 			return;
 		}
 
+		setValidationErrors([]);
 		setIsSubmitting(true);
 		try {
 			await onCreateAnnotation({
@@ -133,7 +157,12 @@ export function RangeSelectionPopup({
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
 			<div className="mx-4 w-full max-w-md">
-				<Card className="shadow-2xl border-2 bg-card/95 backdrop-blur-sm">
+				<Card 
+					className="shadow-2xl border-2 bg-card/95 backdrop-blur-sm"
+					role="dialog"
+					aria-labelledby="range-selection-title"
+					aria-describedby="range-selection-description"
+				>
 					<CardHeader className="pb-4">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-3">
@@ -141,10 +170,10 @@ export function RangeSelectionPopup({
 									<CalendarIcon className="h-5 w-5 text-primary" />
 								</div>
 								<div>
-									<CardTitle className="text-xl">
+									<CardTitle id="range-selection-title" className="text-xl">
 										{showAnnotationForm ? 'Add Annotation' : 'Range Selected'}
 									</CardTitle>
-									<CardDescription className="text-sm">
+									<CardDescription id="range-selection-description" className="text-sm">
 										{dateRange.startDate.toLocaleDateString('en-US', { 
 											month: 'short', 
 											day: 'numeric' 
@@ -176,6 +205,7 @@ export function RangeSelectionPopup({
 									className="w-full h-auto py-4 flex items-center justify-start gap-4"
 									variant="outline"
 									size="lg"
+									aria-label="Zoom to range (Ctrl+Z)"
 								>
 									<div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
 										<MagnifyingGlassIcon className="h-6 w-6 text-primary" />
@@ -186,6 +216,7 @@ export function RangeSelectionPopup({
 											Focus on this period for detailed analysis
 										</div>
 									</div>
+									<div className="text-xs text-muted-foreground">Ctrl+Z</div>
 								</Button>
 
 								<Button 
@@ -193,6 +224,7 @@ export function RangeSelectionPopup({
 									className="w-full h-auto py-4 flex items-center justify-start gap-4"
 									variant="outline"
 									size="lg"
+									aria-label="Add annotation (Ctrl+A)"
 								>
 									<div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
 										<NoteIcon className="h-6 w-6 text-primary" />
@@ -203,6 +235,7 @@ export function RangeSelectionPopup({
 											Mark this period with a note or label
 										</div>
 									</div>
+									<div className="text-xs text-muted-foreground">Ctrl+A</div>
 								</Button>
 							</div>
 						</>
@@ -235,11 +268,27 @@ export function RangeSelectionPopup({
 									maxLength={DEFAULT_ANNOTATION_VALUES.maxTextLength}
 									className="resize-none"
 									disabled={isSubmitting}
+									autoFocus
+									aria-describedby="annotation-text-help annotation-text-count"
 								/>
 								<div className="flex justify-between items-center text-xs text-muted-foreground">
-									<span>Keep it concise and descriptive</span>
-									<span>{annotationText.length}/{DEFAULT_ANNOTATION_VALUES.maxTextLength}</span>
+									<span id="annotation-text-help">Keep it concise and descriptive</span>
+									<span id="annotation-text-count" className={annotationText.length > DEFAULT_ANNOTATION_VALUES.maxTextLength * 0.9 ? 'text-warning' : ''}>
+										{annotationText.length}/{DEFAULT_ANNOTATION_VALUES.maxTextLength}
+									</span>
 								</div>
+								
+								{/* Validation Errors */}
+								{validationErrors.length > 0 && (
+									<div className="space-y-1">
+										{validationErrors.map((error, index) => (
+											<div key={index} className="text-xs text-destructive flex items-center gap-1">
+												<span className="text-destructive">⚠</span>
+												{error}
+											</div>
+										))}
+									</div>
+								)}
 							</div>
 
 							{/* Tags */}
@@ -370,24 +419,26 @@ export function RangeSelectionPopup({
 								>
 									Cancel
 								</Button>
-								<Button
-									onClick={handleCreateAnnotation}
-									disabled={!annotationText.trim() || isSubmitting}
-									className="flex-1"
-									size="lg"
-								>
-									{isSubmitting ? (
-										<>
-											<div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-											Creating...
-										</>
-									) : (
-										<>
-											<NoteIcon className="h-4 w-4 mr-2" />
-											Create Annotation
-										</>
-									)}
-								</Button>
+							<Button
+								onClick={handleCreateAnnotation}
+								disabled={!annotationText.trim() || isSubmitting}
+								className="flex-1"
+								size="lg"
+								aria-label="Create annotation (Ctrl+Enter)"
+							>
+								{isSubmitting ? (
+									<>
+										<div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+										Creating...
+									</>
+								) : (
+									<>
+										<NoteIcon className="h-4 w-4 mr-2" />
+										Create Annotation
+									</>
+								)}
+								<span className="text-xs ml-2 opacity-60">Ctrl+Enter</span>
+							</Button>
 							</div>
 						</div>
 						</>
