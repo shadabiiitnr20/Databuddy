@@ -1,4 +1,4 @@
-import { ChartLineIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { ChartLineIcon, EyeIcon, EyeSlashIcon, XIcon } from '@phosphor-icons/react';
 import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
 import {
@@ -13,16 +13,12 @@ import {
 	XAxis,
 	YAxis,
 } from 'recharts';
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { usePersistentState } from '@/hooks/use-persistent-state';
+import { ANNOTATION_STORAGE_KEYS } from '@/lib/annotation-constants';
 import {
 	type ChartDataRow,
 	METRICS,
@@ -120,6 +116,7 @@ interface MetricsChartProps {
 	onDeleteAnnotation?: (id: string) => Promise<void>;
 	showAnnotations?: boolean;
 	onToggleAnnotations?: (show: boolean) => void;
+	websiteId?: string;
 }
 
 export function MetricsChart({
@@ -138,6 +135,7 @@ export function MetricsChart({
 	onDeleteAnnotation,
 	showAnnotations = true,
 	onToggleAnnotations,
+	websiteId,
 }: MetricsChartProps) {
 	const rawData = data || [];
 	const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
@@ -145,6 +143,11 @@ export function MetricsChart({
 	const [showRangePopup, setShowRangePopup] = useState(false);
 	const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 	const [selectedDateRange, setSelectedDateRange] = useState<DateRangeState | null>(null);
+
+	const [tipDismissed, setTipDismissed] = usePersistentState(
+		websiteId ? ANNOTATION_STORAGE_KEYS.tipDismissed(websiteId) : 'chart-tip-dismissed',
+		false
+	);
 
 	const [visibleMetrics] = useAtom(metricVisibilityAtom);
 	const [, toggleMetric] = useAtom(toggleMetricAtom);
@@ -336,10 +339,17 @@ export function MetricsChart({
 						</div>
 					)}
 					
-					{!refAreaLeft && annotations.length === 0 && (
+					{!refAreaLeft && annotations.length === 0 && !tipDismissed && (
 						<div className="absolute top-4 right-4 z-10">
-							<div className="bg-muted/80 backdrop-blur-sm border border-border/50 px-3 py-2 rounded-lg text-xs text-muted-foreground shadow-sm">
-								💡 Click or drag on chart to create annotations
+							<div className="bg-muted/80 backdrop-blur-sm border border-border/50 px-3 py-2 rounded-lg text-xs text-muted-foreground shadow-sm flex items-center gap-2">
+								<span>💡 Click or drag on chart to create annotations</span>
+								<button
+									onClick={() => setTipDismissed(true)}
+									className="text-muted-foreground hover:text-foreground transition-colors"
+									aria-label="Dismiss tip"
+								>
+									<XIcon size={12} />
+								</button>
 							</div>
 						</div>
 					)}

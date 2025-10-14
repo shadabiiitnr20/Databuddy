@@ -54,4 +54,5 @@ export const CHART_ANNOTATION_STYLES = {
  */
 export const ANNOTATION_STORAGE_KEYS = {
 	visibility: (websiteId: string) => `chart-annotations-visible-${websiteId}`,
+	tipDismissed: (websiteId: string) => `chart-annotations-tip-dismissed-${websiteId}`,
 } as const;
