@@ -171,16 +171,16 @@ export function RangeSelectionPopup({
 								</div>
 								<div>
 									<CardTitle id="range-selection-title" className="text-xl">
-										{showAnnotationForm ? 'Add Annotation' : 'Range Selected'}
+										{showAnnotationForm ? 'Add Annotation' : 'Point Selected'}
 									</CardTitle>
 									<CardDescription id="range-selection-description" className="text-sm">
 										{dateRange.startDate.toLocaleDateString('en-US', { 
 											month: 'short', 
 											day: 'numeric' 
-										})} - {dateRange.endDate.toLocaleDateString('en-US', { 
+										})}{dateRange.startDate.getTime() !== dateRange.endDate.getTime() ? ` - ${dateRange.endDate.toLocaleDateString('en-US', { 
 											month: 'short', 
 											day: 'numeric' 
-										})}
+										})}` : ''}
 									</CardDescription>
 								</div>
 							</div>
