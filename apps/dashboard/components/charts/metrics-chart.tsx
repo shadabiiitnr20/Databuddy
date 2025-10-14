@@ -1,4 +1,4 @@
-import { ChartLineIcon } from '@phosphor-icons/react';
+import { ChartLineIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
 import {
@@ -7,6 +7,7 @@ import {
 	ComposedChart,
 	Legend,
 	ReferenceArea,
+	ReferenceLine,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -19,6 +20,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import {
 	type ChartDataRow,
@@ -30,6 +33,11 @@ import {
 	metricVisibilityAtom,
 	toggleMetricAtom,
 } from '@/stores/jotai/chartAtoms';
+import { RangeSelectionPopup } from './range-selection-popup';
+import { AnnotationsPanel } from './annotations-panel';
+import type { Annotation } from '@/types/annotations';
+import { getChartDisplayDate, isSingleDayAnnotation } from '@/lib/annotation-utils';
+import { CHART_ANNOTATION_STYLES } from '@/lib/annotation-constants';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
 	if (!(active && payload?.length)) {
@@ -98,6 +106,20 @@ interface MetricsChartProps {
 	metricsFilter?: (metric: MetricConfig) => boolean;
 	showLegend?: boolean;
 	onRangeSelect?: (dateRange: DateRangeState) => void;
+	onCreateAnnotation?: (annotation: {
+		annotationType: 'range';
+		xValue: string;
+		xEndValue: string;
+		text: string;
+		tags: string[];
+		color: string;
+		isPublic: boolean;
+	}) => Promise<void> | void;
+	annotations?: Annotation[];
+	onEditAnnotation?: (annotation: Annotation) => void;
+	onDeleteAnnotation?: (id: string) => Promise<void>;
+	showAnnotations?: boolean;
+	onToggleAnnotations?: (show: boolean) => void;
 }
 
 export function MetricsChart({
@@ -110,10 +132,19 @@ export function MetricsChart({
 	metricsFilter,
 	showLegend = true,
 	onRangeSelect,
+	onCreateAnnotation,
+	annotations = [],
+	onEditAnnotation,
+	onDeleteAnnotation,
+	showAnnotations = true,
+	onToggleAnnotations,
 }: MetricsChartProps) {
 	const rawData = data || [];
 	const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
 	const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+	const [showRangePopup, setShowRangePopup] = useState(false);
+	const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+	const [selectedDateRange, setSelectedDateRange] = useState<DateRangeState | null>(null);
 
 	const [visibleMetrics] = useAtom(metricVisibilityAtom);
 	const [, toggleMetric] = useAtom(toggleMetricAtom);
@@ -156,8 +187,8 @@ export function MetricsChart({
 		setRefAreaRight(e.activeLabel);
 	};
 
-	const handleMouseUp = () => {
-		if (!(refAreaLeft && refAreaRight && onRangeSelect)) {
+	const handleMouseUp = (e: any) => {
+		if (!(refAreaLeft && refAreaRight)) {
 			setRefAreaLeft(null);
 			setRefAreaRight(null);
 			return;
@@ -179,13 +210,36 @@ export function MetricsChart({
 		const startDateStr = (chartData[startIndex] as any).rawDate || chartData[startIndex].date;
 		const endDateStr = (chartData[endIndex] as any).rawDate || chartData[endIndex].date;
 		
-		onRangeSelect({ 
+		const dateRange = { 
 			startDate: new Date(startDateStr), 
 			endDate: new Date(endDateStr) 
-		});
+		};
+
+		setSelectedDateRange(dateRange);
+		setShowRangePopup(true);
 
 		setRefAreaLeft(null);
 		setRefAreaRight(null);
+	};
+
+	const handleZoom = (dateRange: DateRangeState) => {
+		if (onRangeSelect) {
+			onRangeSelect(dateRange);
+		}
+	};
+
+	const handleCreateAnnotation = (annotation: {
+		annotationType: 'range';
+		xValue: string;
+		xEndValue: string;
+		text: string;
+		tags: string[];
+		color: string;
+		isPublic: boolean;
+	}) => {
+		if (onCreateAnnotation) {
+			onCreateAnnotation(annotation);
+		}
 	};
 
 	if (isLoading) {
@@ -233,6 +287,34 @@ export function MetricsChart({
 
 	return (
 		<Card className={cn('w-full overflow-hidden rounded-none p-0', className)}>
+			{/* Annotations Panel */}
+			{annotations.length > 0 && (
+				<div className="border-b border-border bg-muted/30 px-4 py-2 flex items-center justify-between">
+					<div className="flex items-center gap-3">
+						<span className="text-sm text-muted-foreground">
+							{annotations.length} annotation{annotations.length !== 1 ? 's' : ''} on this chart
+						</span>
+						{onToggleAnnotations && (
+							<div className="flex items-center gap-2">
+								<Label htmlFor="show-annotations" className="text-xs text-muted-foreground">
+									Show annotations
+								</Label>
+								<Switch
+									id="show-annotations"
+									checked={showAnnotations}
+									onCheckedChange={onToggleAnnotations}
+								/>
+							</div>
+						)}
+					</div>
+					<AnnotationsPanel
+						annotations={annotations}
+						onEdit={onEditAnnotation || (() => {})}
+						onDelete={onDeleteAnnotation || (async () => {})}
+					/>
+				</div>
+			)}
+			
 			<CardContent className="p-0">
 				<div
 					className="relative select-none"
@@ -243,6 +325,14 @@ export function MetricsChart({
 						WebkitUserSelect: refAreaLeft ? 'none' : 'auto',
 					}}
 				>
+					{/* Range Selection Instructions */}
+					{refAreaLeft && !refAreaRight && (
+						<div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+							<div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+								Drag to select date range
+							</div>
+						</div>
+					)}
 					<ResponsiveContainer height="100%" width="100%">
 						<ComposedChart
 							data={chartData}
@@ -310,6 +400,78 @@ export function MetricsChart({
 									fillOpacity={0.15}
 								/>
 							)}
+							
+							{showAnnotations && annotations.map((annotation, index) => {
+								const startDate = getChartDisplayDate(annotation.xValue);
+								
+								if (annotation.annotationType === 'range' && annotation.xEndValue) {
+									const endDate = getChartDisplayDate(annotation.xEndValue);
+									
+									const isSingleDay = isSingleDayAnnotation(annotation);
+									
+									if (isSingleDay) {
+										return (
+											<ReferenceLine
+												key={annotation.id}
+												x={startDate}
+												stroke={annotation.color}
+												strokeWidth={CHART_ANNOTATION_STYLES.strokeWidth}
+												strokeDasharray={CHART_ANNOTATION_STYLES.strokeDasharray}
+												label={{
+													value: annotation.text,
+													position: index % 2 === 0 ? 'top' : 'insideTopLeft',
+													fill: annotation.color,
+													fontSize: CHART_ANNOTATION_STYLES.fontSize,
+													fontWeight: CHART_ANNOTATION_STYLES.fontWeight,
+													offset: CHART_ANNOTATION_STYLES.offset,
+												}}
+											/>
+										);
+									}
+									
+									return (
+										<ReferenceArea
+											key={annotation.id}
+											x1={startDate}
+											x2={endDate}
+											fill={annotation.color}
+											fillOpacity={CHART_ANNOTATION_STYLES.fillOpacity}
+											stroke={annotation.color}
+											strokeOpacity={CHART_ANNOTATION_STYLES.strokeOpacity}
+											strokeWidth={2}
+											strokeDasharray="3 3"
+											label={{
+												value: annotation.text,
+												position: index % 2 === 0 ? 'top' : 'insideTop',
+												fill: annotation.color,
+												fontSize: CHART_ANNOTATION_STYLES.fontSize,
+												fontWeight: CHART_ANNOTATION_STYLES.fontWeight,
+												offset: CHART_ANNOTATION_STYLES.offset,
+											}}
+										/>
+									);
+								}
+								
+								// Point or line annotations
+								return (
+									<ReferenceLine
+										key={annotation.id}
+										x={startDate}
+										stroke={annotation.color}
+										strokeWidth={CHART_ANNOTATION_STYLES.strokeWidth}
+										strokeDasharray={CHART_ANNOTATION_STYLES.strokeDasharray}
+										label={{
+											value: annotation.text,
+											position: index % 2 === 0 ? 'top' : 'insideTopLeft',
+											fill: annotation.color,
+											fontSize: CHART_ANNOTATION_STYLES.fontSize,
+											fontWeight: CHART_ANNOTATION_STYLES.fontWeight,
+											offset: CHART_ANNOTATION_STYLES.offset,
+										}}
+									/>
+								);
+							})}
+							
 							{showLegend && (
 								<Legend
 									align="center"
@@ -373,6 +535,18 @@ export function MetricsChart({
 					</ResponsiveContainer>
 				</div>
 			</CardContent>
+
+			{/* Range Selection Popup */}
+			{showRangePopup && selectedDateRange && (
+				<RangeSelectionPopup
+					isOpen={showRangePopup}
+					position={{ x: 0, y: 0 }} // Position is handled by modal overlay
+					dateRange={selectedDateRange}
+					onClose={() => setShowRangePopup(false)}
+					onZoom={handleZoom}
+					onCreateAnnotation={handleCreateAnnotation}
+				/>
+			)}
 		</Card>
 	);
 }
