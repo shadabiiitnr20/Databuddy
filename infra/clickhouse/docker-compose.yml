@@ -2,7 +2,7 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:25.6
     container_name: clickhouse
-    restart: unless-stopped
+    restart: unless-bstopped
     ports:
       - "8123:8123"   # HTTP interface
       - "9000:9000"   # TCP native protocol

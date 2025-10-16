@@ -351,12 +351,6 @@ async function insertCustomEvent(
 			typeof customData.timestamp === 'number' ? customData.timestamp : now,
 	};
 
-	console.log('🔍 INSERTING CUSTOM EVENT TO DATABASE:');
-	console.log('📥 Raw input properties:', JSON.stringify(customData.properties, null, 2));
-	console.log('📤 Final stored properties:', customEvent.properties);
-	console.log('📊 Full event object:', JSON.stringify(customEvent, null, 2));
-	console.log('---');
-
 	try {
 		await clickHouse.insert({
 			table: 'analytics.custom_events',
@@ -698,12 +692,6 @@ const app = new Elysia()
 
 				const parseResult = analyticsEventSchema.safeParse(body);
 				if (!parseResult.success) {
-					console.error(
-						'Blocked event schema errors:',
-						parseResult.error.issues,
-						'Payload:',
-						body
-					);
 					await logBlockedTraffic(
 						request,
 						body,
@@ -741,12 +729,6 @@ const app = new Elysia()
 
 				const parseResult = errorEventSchema.safeParse(body);
 				if (!parseResult.success) {
-					console.error(
-						'Blocked event schema errors:',
-						parseResult.error.issues,
-						'Payload:',
-						body
-					);
 					await logBlockedTraffic(
 						request,
 						body,
@@ -781,12 +763,6 @@ const app = new Elysia()
 
 				const parseResult = webVitalsEventSchema.safeParse(body);
 				if (!parseResult.success) {
-					console.error(
-						'Blocked event schema errors:',
-						parseResult.error.issues,
-						'Payload:',
-						body
-					);
 					await logBlockedTraffic(
 						request,
 						body,
@@ -807,20 +783,8 @@ const app = new Elysia()
 			}
 
 			if (eventType === 'custom') {
-				console.log('📨 RECEIVED SINGLE CUSTOM EVENT:');
-				console.log('🎯 Event name:', body.name);
-				console.log('📋 Properties:', JSON.stringify(body.properties, null, 2));
-				console.log('📏 Properties count:', Object.keys(body.properties || {}).length);
-				console.log('---');
-				
 				const parseResult = customEventSchema.safeParse(body);
 				if (!parseResult.success) {
-					console.error(
-						'Blocked event schema errors:',
-						parseResult.error.issues,
-						'Payload:',
-						body
-					);
 					await logBlockedTraffic(
 						request,
 						body,
@@ -858,12 +822,6 @@ const app = new Elysia()
 
 				const parseResult = outgoingLinkSchema.safeParse(body);
 				if (!parseResult.success) {
-					console.error(
-						'Blocked event schema errors:',
-						parseResult.error.issues,
-						'Payload:',
-						body
-					);
 					await logBlockedTraffic(
 						request,
 						body,
@@ -946,12 +904,6 @@ const app = new Elysia()
 
 					const parseResult = analyticsEventSchema.safeParse(event);
 					if (!parseResult.success) {
-						console.error(
-							'Blocked event schema errors:',
-							parseResult.error.issues,
-							'Payload:',
-							event
-						);
 						await logBlockedTraffic(
 							request,
 							event,
@@ -1014,12 +966,6 @@ const app = new Elysia()
 
 					const parseResult = errorEventSchema.safeParse(event);
 					if (!parseResult.success) {
-						console.error(
-							'Blocked event schema errors:',
-							parseResult.error.issues,
-							'Payload:',
-							event
-						);
 						await logBlockedTraffic(
 							request,
 							event,
@@ -1073,12 +1019,6 @@ const app = new Elysia()
 
 					const parseResult = webVitalsEventSchema.safeParse(event);
 					if (!parseResult.success) {
-						console.error(
-							'Blocked event schema errors:',
-							parseResult.error.issues,
-							'Payload:',
-							event
-						);
 						await logBlockedTraffic(
 							request,
 							event,
@@ -1112,21 +1052,9 @@ const app = new Elysia()
 						};
 					}
 				}
-				if (eventType === 'custom') {
-					console.log('📦 RECEIVED BATCH CUSTOM EVENT:');
-					console.log('🎯 Event name:', event.name);
-					console.log('📋 Properties:', JSON.stringify(event.properties, null, 2));
-					console.log('📏 Properties count:', Object.keys(event.properties || {}).length);
-					console.log('---');
-					
+				if (eventType === 'custom') {	
 					const parseResult = customEventSchema.safeParse(event);
 					if (!parseResult.success) {
-						console.error(
-							'Blocked event schema errors:',
-							parseResult.error.issues,
-							'Payload:',
-							event
-						);
 						await logBlockedTraffic(
 							request,
 							event,
@@ -1184,12 +1112,6 @@ const app = new Elysia()
 
 					const parseResult = outgoingLinkSchema.safeParse(event);
 					if (!parseResult.success) {
-						console.error(
-							'Blocked event schema errors:',
-							parseResult.error.issues,
-							'Payload:',
-							event
-						);
 						await logBlockedTraffic(
 							request,
 							event,
