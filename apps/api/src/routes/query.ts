@@ -13,7 +13,7 @@ import {
 	DynamicQueryRequestSchema,
 	type DynamicQueryRequestType,
 } from '../schemas';
-import { databuddy } from '../lib/databuddy';
+// import { databuddy } from '../lib/databuddy';
 
 interface QueryParams {
 	start_date?: string;
