@@ -40,7 +40,6 @@ export function FunnelAnalytics({
 	selectedReferrer,
 	referrerAnalytics,
 }: FunnelAnalyticsProps) {
-	// Derive selected referrer's metrics from referrer_analytics data
 	const selectedReferrerData = useMemo(() => {
 		if (!selectedReferrer || selectedReferrer === 'all' || !referrerAnalytics) {
 			return null;
@@ -88,7 +87,6 @@ export function FunnelAnalytics({
 	if (isLoading) {
 		return (
 			<div className="fade-in-50 animate-in space-y-4 duration-500">
-				{/* Loading Summary Stats */}
 				<div className="space-y-2">
 					<div className="flex items-center gap-2">
 						<div className="h-4 w-4 animate-pulse rounded bg-muted" />
@@ -110,7 +108,6 @@ export function FunnelAnalytics({
 					</div>
 				</div>
 
-				{/* Loading Funnel Flow */}
 				<div className="space-y-2">
 					<div className="flex items-center gap-2">
 						<div className="h-4 w-4 animate-pulse rounded bg-muted" />
@@ -177,7 +174,6 @@ export function FunnelAnalytics({
 
 	return (
 		<div className="space-y-4">
-			{/* Summary Stats */}
 			<div className="space-y-2">
 				<div className="flex items-center gap-2">
 					<ChartBarIcon
@@ -222,7 +218,6 @@ export function FunnelAnalytics({
 				</div>
 			</div>
 
-			{/* Funnel Flow */}
 			<FunnelFlow
 				steps={displayData.steps_analytics}
 				totalUsers={displayData.total_users_entered}
