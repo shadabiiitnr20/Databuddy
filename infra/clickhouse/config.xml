@@ -543,6 +543,11 @@
             <default>
                 <keep_free_space_bytes>0</keep_free_space_bytes>
             </default>
+            <r2_disk>
+                <s3>
+                    <named_collection>r2_cloudflare_s3</named_collection>
+                </s3>
+            </r2_disk>
         </disks>
 
         <policies>
@@ -553,6 +558,13 @@
                     </main>
                 </volumes>
             </default>
+            <r2_policy>
+                <volumes>
+                    <r2_volume>
+                        <disk>r2_disk</disk>
+                    </r2_volume>
+                </volumes>
+            </r2_policy>
         </policies>
     </storage_configuration>
 
