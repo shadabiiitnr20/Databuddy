@@ -4,7 +4,7 @@ import type {
 } from '@ai-sdk/provider';
 import { wrapLanguageModel } from 'ai';
 import { computeCostUSD } from 'tokenlens';
-import type { Databuddy } from '../../node';
+import type { Databuddy } from '@/node';
 
 export type TrackProperties = {
 	inputTokens?: number;

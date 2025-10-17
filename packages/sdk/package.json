@@ -10,24 +10,46 @@
     "build": "unbuild",
     "test": "bun test"
   },
-  "dependencies": {
+  "devDependencies": {
+    "@ai-sdk/provider": "^2.0.0",
+    "@types/node": "^20.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "ai": "^5.0.51",
+    "jotai": ">=2.0.0",
+    "react": ">=19.0.0",
+    "@types/react": ">=19.0.0",
+    "tokenlens": "^2.0.0-alpha.3",
+    "typescript": "catalog:",
+    "unbuild": "^3.6.1",
+    "vue": ">=3",
+    "msw": "^2.11.5"
+  },
+  "peerDependencies": {
     "@ai-sdk/provider": "^2.0.0",
     "ai": "^5.0.51",
     "jotai": ">=2.0.0",
-    "tokenlens": "^2.0.0-alpha.3"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "catalog:",
-    "unbuild": "^3.6.1"
-  },
-  "peerDependencies": {
     "react": ">=18",
+    "tokenlens": "^2.0.0-alpha.3",
+    "msw": "^2.11.5",
     "vue": ">=3"
   },
   "peerDependenciesMeta": {
+    "@ai-sdk/provider": {
+      "optional": true
+    },
+    "ai": {
+      "optional": true
+    },
+    "jotai": {
+      "optional": true
+    },
     "react": {
+      "optional": true
+    },
+    "tokenlens": {
+      "optional": true
+    },
+    "msw": {
       "optional": true
     },
     "vue": {
