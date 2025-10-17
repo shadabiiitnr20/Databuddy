@@ -537,7 +537,7 @@
     <!-- Path to data directory, with trailing slash. -->
     <path>/var/lib/clickhouse/</path>
 
-    <!-- Multi-disk configuration with R2 storage -->
+    <!-- Multi-disk configuration -->
     <storage_configuration>
         <disks>
             <default>
