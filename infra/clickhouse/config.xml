@@ -543,16 +543,6 @@
             <default>
                 <keep_free_space_bytes>0</keep_free_space_bytes>
             </default>
-            <r2>
-                <type>s3</type>
-                <endpoint>${R2_ENDPOINT}</endpoint>
-                <access_key_id>${R2_ACCESS_KEY}</access_key_id>
-                <secret_access_key>${R2_SECRET_KEY}</secret_access_key>
-                <metadata_path>/var/lib/clickhouse/disks/r2/</metadata_path>
-                <cache_enabled>true</cache_enabled>
-                <cache_path>/var/lib/clickhouse/r2_cache/</cache_path>
-                <cache_size>20Gi</cache_size>
-            </r2>
         </disks>
 
         <policies>
