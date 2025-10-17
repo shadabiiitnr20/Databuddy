@@ -9,7 +9,6 @@ services:
       - "9009:9009" # Interserver communication
     volumes:
       - clickhouse_data:/var/lib/clickhouse
-      - ./config.xml:/etc/clickhouse-server/config.xml:ro
       - ./flags:/var/lib/clickhouse/flags
     environment:
       CLICKHOUSE_DB: default
