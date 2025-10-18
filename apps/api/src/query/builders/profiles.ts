@@ -16,7 +16,9 @@ export const ProfilesBuilders: Record<string, SimpleQueryConfig> = {
 			filterConditions?: string[],
 			filterParams?: Record<string, Filter['value']>
 		) => {
-			const combinedWhereClause = buildWhereClause(filterConditions);
+			const combinedWhereClause = filterConditions?.length
+			? `AND ${filterConditions.join(' AND ')}`
+			: '';
 
 			return {
 				sql: `
@@ -358,7 +360,9 @@ export const ProfilesBuilders: Record<string, SimpleQueryConfig> = {
 			filterConditions?: string[],
 			filterParams?: Record<string, Filter['value']>
 		) => {
-			const combinedWhereClause = buildWhereClause(filterConditions);
+			const combinedWhereClause = filterConditions?.length
+			? `AND ${filterConditions.join(' AND ')}`
+			: '';
 
 			return {
 				sql: `

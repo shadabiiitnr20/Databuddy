@@ -112,7 +112,9 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 				sessionAttributionJoin: (alias?: string) => string;
 			}
 		) => {
-			const combinedWhereClause = buildWhereClause(filterConditions);
+			const combinedWhereClause = filterConditions?.length
+			? `AND ${filterConditions.join(' AND ')}`
+			: '';
 
 			// Use session attribution if helpers are provided
 			const sessionAttributionCTE = helpers?.sessionAttributionCTE
@@ -232,7 +234,9 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 				sessionAttributionJoin: (alias?: string) => string;
 			}
 		) => {
-			const combinedWhereClause = buildWhereClause(filterConditions);
+			const combinedWhereClause = filterConditions?.length
+			? `AND ${filterConditions.join(' AND ')}`
+			: '';
 
 			// Use session attribution if helpers are provided
 			const sessionAttributionCTE = helpers?.sessionAttributionCTE
@@ -379,7 +383,9 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 				sessionAttributionJoin: (alias?: string) => string;
 			}
 		) => {
-			const combinedWhereClause = buildWhereClause(filterConditions);
+			const combinedWhereClause = filterConditions?.length
+			? `AND ${filterConditions.join(' AND ')}`
+			: '';
 
 			// Use session attribution if helpers are provided
 			const sessionAttributionCTE = helpers?.sessionAttributionCTE
