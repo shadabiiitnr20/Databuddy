@@ -46,7 +46,7 @@
       "react": "19.0.0",
       "react-dom": "19.0.0",
       "next": "^15.3.4",
-      "typescript": "^5.8.3",
+      "typescript": "^5.9.3",
       "zod": "3.25.76",
       "tailwindcss": "^4.1.4",
       "autumn-js": "^0.0.101",
@@ -79,8 +79,13 @@
       "@logtail/pino": "^0.5.5",
       "@biomejs/biome": "2.2.2",
       "@types/bun": "latest",
+      "@types/react": "19.0.0",
+      "@types/react-dom": "19.0.0",
+      "bun-types": "latest",
       "ultracite": "5.3.10",
-      "turbo": "^2.5.2"
+      "turbo": "^2.5.2",
+      "drizzle-orm": "^0.42.0",
+      "nanoid": "^5.1.6"
     }
   },
   "dependencies": {
