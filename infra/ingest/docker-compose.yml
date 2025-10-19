@@ -4,22 +4,20 @@ services:
     container_name: redpanda
     restart: unless-stopped
     ports:
-      - "9092:9092"
+      - "19092:19092"
       - "9644:9644"
     volumes:
       - redpanda_data:/var/lib/redpanda/data
     environment:
       REDPANDA_LOG_LEVEL: ${REDPANDA_LOG_LEVEL:-info}
-      REDPANDA_HOST: ${REDPANDA_HOST:-redpanda}
     command:
       - redpanda
       - start
-      - --kafka-addr internal://0.0.0.0:9092
-      - --advertise-kafka-addr internal://redpanda:9092
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
       - --pandaproxy-addr internal://0.0.0.0:8082
       - --advertise-pandaproxy-addr internal://redpanda:8082
       - --schema-registry-addr internal://0.0.0.0:8081
-      - --advertise-kafka-addr=PLAINTEXT://${REDPANDA_HOST}:9092
       - --rpc-addr redpanda:33145
       - --advertise-rpc-addr redpanda:33145
       - --overprovisioned
