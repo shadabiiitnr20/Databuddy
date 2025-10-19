@@ -6,11 +6,8 @@ sources:
     topics:
       - analytics-events
     auto_offset_reset: earliest
-    sasl:
-      enabled: true
-      mechanism: SCRAM-SHA-256
-      username: "${VECTOR_KAFKA_USER}"
-      password: "${VECTOR_KAFKA_PASSWORD}"
+    decoding:
+      codec: json
 
 sinks:
   clickhouse:
@@ -18,7 +15,8 @@ sinks:
     inputs:
       - redpanda
     endpoint: "${CLICKHOUSE_URL}"
-    table: analytics.events
+    database: analytics
+    table: events
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
@@ -29,3 +27,5 @@ sinks:
       timeout_secs: 5
     date_time_best_effort: true
     skip_unknown_fields: true
+    encoding:
+      timestamp_format: unix_ms

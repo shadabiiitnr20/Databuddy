@@ -36,32 +36,6 @@ services:
       retries: 3
       start_period: 40s
 
-  redpanda-init:
-    image: redpandadata/redpanda:v25.2.9
-    container_name: redpanda-init
-    restart: "no"
-    depends_on:
-      redpanda:
-        condition: service_healthy
-    environment:
-      VECTOR_KAFKA_USER: ${VECTOR_KAFKA_USER:-vector-agent}
-      VECTOR_KAFKA_PASSWORD: ${VECTOR_KAFKA_PASSWORD:-super_secret_password}
-    entrypoint: >
-      bash -c "
-        echo 'Waiting for Redpanda to be ready...' &&
-        sleep 5 &&
-        echo 'Enabling SASL mechanisms...' &&
-        rpk cluster config set sasl_mechanisms '[\"SCRAM\"]' -X brokers=redpanda:9092 -X admin.hosts=redpanda:9644 || true &&
-        echo 'Creating Kafka user: $VECTOR_KAFKA_USER' &&
-        rpk security user create $VECTOR_KAFKA_USER -p '$VECTOR_KAFKA_PASSWORD' -X brokers=redpanda:9092 -X admin.hosts=redpanda:9644 || true &&
-        echo 'Setting up ACLs for all topics and groups...' &&
-        rpk security acl create --allow-principal User:$VECTOR_KAFKA_USER --operation write,read,describe,create --topic '*' -X brokers=redpanda:9092 || true &&
-        rpk security acl create --allow-principal User:$VECTOR_KAFKA_USER --operation read,describe --group '*' -X brokers=redpanda:9092 || true &&
-        echo 'ACL setup complete'
-      "
-    networks:
-      - databuddy
-
   console:
     image: docker.redpanda.com/redpandadata/console:latest
     container_name: redpanda-console
@@ -88,7 +62,6 @@ services:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-defaultpass}
       CLICKHOUSE_URL: ${CLICKHOUSE_URL:-http://clickhouse:8123}
-      CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE:-analytics}
       VECTOR_LOG: ${VECTOR_LOG:-info}
       VECTOR_KAFKA_USER: ${VECTOR_KAFKA_USER:-vector-agent}
       VECTOR_KAFKA_PASSWORD: ${VECTOR_KAFKA_PASSWORD:-super_secret_password}
@@ -98,8 +71,6 @@ services:
     depends_on:
       redpanda:
         condition: service_healthy
-      redpanda-init:
-        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "vector", "validate", "/etc/vector/vector.yaml" ]
       interval: 30s
