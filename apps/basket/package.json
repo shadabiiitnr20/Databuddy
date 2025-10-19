@@ -9,6 +9,7 @@
     "test:watch": "bun test --watch",
     "test:routes": "bun test src/routes/*.test.ts",
     "test:utils": "bun test src/utils/*.test.ts",
+    "test:kafka": "bun test src/lib/kafka.test.ts src/lib/producer.test.ts",
     "test:coverage": "bun test --coverage"
   },
   "dependencies": {
