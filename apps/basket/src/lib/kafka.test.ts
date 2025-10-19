@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { Kafka, type Consumer, type Producer } from 'kafkajs';
 
-const KAFKA_BROKERS = process.env.KAFKA_BROKERS || 'localhost:9092';
+const KAFKA_BROKERS = process.env.KAFKA_BROKERS || 'localhost:19092';
 const TEST_TOPIC = 'test';
 const TEST_GROUP_ID = 'test-consumer-group';
 

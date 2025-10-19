@@ -1,8 +1,10 @@
 import { Kafka } from 'kafkajs';
 
+const BROKER = process.env.KAFKA_BROKERS || 'localhost:19092';
+
 const kafka = new Kafka({
   clientId: 'basket',
-  brokers: [process.env.KAFKA_BROKERS || 'localhost:9092'],
+  brokers: [BROKER],
 });
 
 const producer = kafka.producer();
