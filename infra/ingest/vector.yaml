@@ -13,7 +13,6 @@ sinks:
     inputs:
       - redpanda
     endpoint: "${CLICKHOUSE_URL}"
-    database: "${CLICKHOUSE_DATABASE}"
     table: analytics.events
     auth:
       strategy: basic
@@ -23,3 +22,5 @@ sinks:
       max_events: 1000
       max_bytes: 5000000
       timeout_secs: 5
+    date_time_best_effort: true
+    skip_unknown_fields: true
