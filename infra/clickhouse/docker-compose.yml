@@ -10,7 +10,6 @@ services:
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - ./flags:/var/lib/clickhouse/flags
-      - ./users.xml:/etc/clickhouse-server/users.d/users.xml:ro
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
