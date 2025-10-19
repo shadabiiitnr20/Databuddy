@@ -12,6 +12,7 @@ import { redis } from '@databuddy/redis';
 import { Autumn as autumn } from 'autumn-js';
 import { Elysia } from 'elysia';
 import { getWebsiteByIdV2, isValidOrigin } from '../hooks/auth';
+import { sendEvent } from '../lib/producer';
 import {
 	analyticsEventSchema,
 	customEventSchema,
@@ -235,10 +236,10 @@ async function insertError(
 			format: 'JSONEachRow',
 		});
 	} catch (err) {
-		// logger.error('Failed to insert error event', {
-		// 	error: err as Error,
-		// 	eventId,
-		// });
+		console.error('Failed to insert error event', {
+			error: err as Error,
+			eventId,
+		});
 		throw err;
 	}
 }
@@ -303,10 +304,10 @@ async function insertWebVitals(
 			format: 'JSONEachRow',
 		});
 	} catch (err) {
-		// logger.error('Failed to insert web vitals event', {
-		// 	error: err as Error,
-		// 	eventId,
-		// });
+		console.error('Failed to insert web vitals event', {
+			error: err as Error,
+			eventId,
+		});
 		throw err;
 	}
 }
@@ -407,10 +408,10 @@ async function insertOutgoingLink(
 			format: 'JSONEachRow',
 		});
 	} catch (err) {
-		// logger.error('Failed to insert outgoing link event', {
-		// 	error: err as Error,
-		// 	eventId,
-		// });
+		console.error('Failed to insert outgoing link event', {
+			error: err as Error,
+			eventId,
+		});
 		throw err;
 	}
 }
@@ -526,16 +527,12 @@ async function insertTrackEvent(
 	};
 
 	try {
-		await clickHouse.insert({
-			table: 'analytics.events',
-			values: [trackEvent],
-			format: 'JSONEachRow',
-		});
+		sendEvent('analytics-events', trackEvent);
 	} catch (err) {
-		// logger.error('Failed to insert track event', {
-		// 	error: err as Error,
-		// 	eventId,
-		// });
+		console.error('Failed to send track event to Kafka', {
+			error: err as Error,
+			eventId,
+		});
 		throw err;
 	}
 }
@@ -642,11 +639,11 @@ async function logBlockedTraffic(
 				// );
 			})
 			.catch((err) => {
-				// logger.error('Failed to log blocked traffic', { error: err as Error });
+				console.error('Failed to log blocked traffic', { error: err as Error });
 				throw err;
 			});
 	} catch (error) {
-		// logger.error('Failed to log blocked traffic', { error: error as Error });
+		console.error('Failed to log blocked traffic', { error: error as Error });
 		throw error;
 	}
 }
@@ -663,10 +660,12 @@ const app = new Elysia()
 			query: any;
 			request: Request;
 		}) => {
-			const validation = await validateRequest(body, query, request);
-			if (!validation.success) {
-				return validation.error;
-			}
+			try {
+				const validation = await validateRequest(body, query, request);
+				if (!validation.success) {
+					console.error('Request validation failed:', validation.error);
+					return validation.error;
+				}
 
 			const { clientId, userAgent, ip } = validation;
 
@@ -678,7 +677,6 @@ const app = new Elysia()
 			const eventType = body.type || 'track';
 
 			if (eventType === 'track') {
-				// Check for bots before processing track events
 				const botError = await checkForBot(
 					request,
 					body,
@@ -690,22 +688,27 @@ const app = new Elysia()
 					return botError.error;
 				}
 
-				const parseResult = analyticsEventSchema.safeParse(body);
-				if (!parseResult.success) {
-					await logBlockedTraffic(
-						request,
-						body,
-						query,
-						'invalid_schema',
-						'Schema Validation',
-						undefined,
-						clientId
-					);
-					return {
-						status: 'error',
-						message: 'Invalid event schema',
-						errors: parseResult.error.issues,
-					};
+				let parseResult;
+				if (process.env.NODE_ENV === 'development') {
+					parseResult = { success: true, data: body };
+				} else {
+					parseResult = analyticsEventSchema.safeParse(body);
+					if (!parseResult.success) {
+						await logBlockedTraffic(
+							request,
+							body,
+							query,
+							'invalid_schema',
+							'Schema Validation',
+							undefined,
+							clientId
+						);
+						return {
+							status: 'error',
+							message: 'Invalid event schema',
+							errors: parseResult.error.issues,
+						};
+					}
 				}
 				insertTrackEvent(body, clientId, userAgent, ip);
 				return { status: 'success', type: 'track' };
@@ -727,22 +730,27 @@ const app = new Elysia()
 					return botError.error;
 				}
 
-				const parseResult = errorEventSchema.safeParse(body);
-				if (!parseResult.success) {
-					await logBlockedTraffic(
-						request,
-						body,
-						query,
-						'invalid_schema',
-						'Schema Validation',
-						undefined,
-						clientId
-					);
-					return {
-						status: 'error',
-						message: 'Invalid event schema',
-						errors: parseResult.error.issues,
-					};
+				let parseResult;
+				if (process.env.NODE_ENV === 'development') {
+					parseResult = { success: true, data: body };
+				} else {
+					parseResult = errorEventSchema.safeParse(body);
+					if (!parseResult.success) {
+						await logBlockedTraffic(
+							request,
+							body,
+							query,
+							'invalid_schema',
+							'Schema Validation',
+							undefined,
+							clientId
+						);
+						return {
+							status: 'error',
+							message: 'Invalid event schema',
+							errors: parseResult.error.issues,
+						};
+					}
 				}
 				insertError(body, clientId, userAgent, ip);
 				return { status: 'success', type: 'error' };
@@ -761,44 +769,54 @@ const app = new Elysia()
 					return botError.error;
 				}
 
-				const parseResult = webVitalsEventSchema.safeParse(body);
-				if (!parseResult.success) {
-					await logBlockedTraffic(
-						request,
-						body,
-						query,
-						'invalid_schema',
-						'Schema Validation',
-						undefined,
-						clientId
-					);
-					return {
-						status: 'error',
-						message: 'Invalid event schema',
-						errors: parseResult.error.issues,
-					};
+				let parseResult;
+				if (process.env.NODE_ENV === 'development') {
+					parseResult = { success: true, data: body };
+				} else {
+					parseResult = webVitalsEventSchema.safeParse(body);
+					if (!parseResult.success) {
+						await logBlockedTraffic(
+							request,
+							body,
+							query,
+							'invalid_schema',
+							'Schema Validation',
+							undefined,
+							clientId
+						);
+						return {
+							status: 'error',
+							message: 'Invalid event schema',
+							errors: parseResult.error.issues,
+						};
+					}
 				}
 				insertWebVitals(body, clientId, userAgent, ip);
 				return { status: 'success', type: 'web_vitals' };
 			}
 
 			if (eventType === 'custom') {
-				const parseResult = customEventSchema.safeParse(body);
-				if (!parseResult.success) {
-					await logBlockedTraffic(
-						request,
-						body,
-						query,
-						'invalid_schema',
-						'Schema Validation',
-						undefined,
-						clientId
-					);
-					return {
-						status: 'error',
-						message: 'Invalid event schema',
-						errors: parseResult.error.issues,
-					};
+				let parseResult;
+				if (process.env.NODE_ENV === 'development') {
+					parseResult = { success: true, data: body };
+				} else {
+					parseResult = customEventSchema.safeParse(body);
+					if (!parseResult.success) {
+						await logBlockedTraffic(
+							request,
+							body,
+							query,
+							'invalid_schema',
+							'Schema Validation',
+							undefined,
+							clientId
+						);
+						return {
+							status: 'error',
+							message: 'Invalid event schema',
+							errors: parseResult.error.issues,
+						};
+					}
 				}
 
 				const eventId = body.eventId || randomUUID();
@@ -820,28 +838,37 @@ const app = new Elysia()
 					return botError.error;
 				}
 
-				const parseResult = outgoingLinkSchema.safeParse(body);
-				if (!parseResult.success) {
-					await logBlockedTraffic(
-						request,
-						body,
-						query,
-						'invalid_schema',
-						'Schema Validation',
-						undefined,
-						clientId
-					);
-					return {
-						status: 'error',
-						message: 'Invalid event schema',
-						errors: parseResult.error.issues,
-					};
+				let parseResult;
+				if (process.env.NODE_ENV === 'development') {
+					parseResult = { success: true, data: body };
+				} else {
+					parseResult = outgoingLinkSchema.safeParse(body);
+					if (!parseResult.success) {
+						await logBlockedTraffic(
+							request,
+							body,
+							query,
+							'invalid_schema',
+							'Schema Validation',
+							undefined,
+							clientId
+						);
+						return {
+							status: 'error',
+							message: 'Invalid event schema',
+							errors: parseResult.error.issues,
+						};
+					}
 				}
 				insertOutgoingLink(body, clientId, userAgent, ip);
 				return { status: 'success', type: 'outgoing_link' };
 			}
 
 			return { status: 'error', message: 'Unknown event type' };
+			} catch (error) {
+				console.error('Error processing event:', error);
+				return { status: 'error', message: 'Internal server error' };
+			}
 		}
 	)
 	.post(
@@ -855,12 +882,14 @@ const app = new Elysia()
 			query: any;
 			request: Request;
 		}) => {
-			if (!Array.isArray(body)) {
-				return {
-					status: 'error',
-					message: 'Batch endpoint expects array of events',
-				};
-			}
+			try {
+				if (!Array.isArray(body)) {
+					console.error('Batch endpoint received non-array body');
+					return {
+						status: 'error',
+						message: 'Batch endpoint expects array of events',
+					};
+				}
 
 			if (body.length > VALIDATION_LIMITS.BATCH_MAX_SIZE) {
 				return { status: 'error', message: 'Batch too large' };
@@ -902,24 +931,29 @@ const app = new Elysia()
 						};
 					}
 
-					const parseResult = analyticsEventSchema.safeParse(event);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							event,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							eventType,
-							errors: parseResult.error.issues,
-							eventId: event.eventId || event.payload?.eventId,
-						};
+					let parseResult;
+					if (process.env.NODE_ENV === 'development') {
+						parseResult = { success: true, data: event };
+					} else {
+						parseResult = analyticsEventSchema.safeParse(event);
+						if (!parseResult.success) {
+							await logBlockedTraffic(
+								request,
+								event,
+								query,
+								'invalid_schema',
+								'Schema Validation',
+								undefined,
+								clientId
+							);
+							return {
+								status: 'error',
+								message: 'Invalid event schema',
+								eventType,
+								errors: parseResult.error.issues,
+								eventId: event.eventId || event.payload?.eventId,
+							};
+						}
 					}
 					try {
 						await insertTrackEvent(event, clientId, userAgent, ip);
@@ -964,24 +998,29 @@ const app = new Elysia()
 						};
 					}
 
-					const parseResult = errorEventSchema.safeParse(event);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							event,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							eventType,
-							errors: parseResult.error.issues,
-							eventId: event.payload?.eventId,
-						};
+					let parseResult;
+					if (process.env.NODE_ENV === 'development') {
+						parseResult = { success: true, data: event };
+					} else {
+						parseResult = errorEventSchema.safeParse(event);
+						if (!parseResult.success) {
+							await logBlockedTraffic(
+								request,
+								event,
+								query,
+								'invalid_schema',
+								'Schema Validation',
+								undefined,
+								clientId
+							);
+							return {
+								status: 'error',
+								message: 'Invalid event schema',
+								eventType,
+								errors: parseResult.error.issues,
+								eventId: event.payload?.eventId,
+							};
+						}
 					}
 					try {
 						await insertError(event, clientId, userAgent, ip);
@@ -1017,24 +1056,29 @@ const app = new Elysia()
 						};
 					}
 
-					const parseResult = webVitalsEventSchema.safeParse(event);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							event,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							eventType,
-							errors: parseResult.error.issues,
-							eventId: event.payload?.eventId,
-						};
+					let parseResult;
+					if (process.env.NODE_ENV === 'development') {
+						parseResult = { success: true, data: event };
+					} else {
+						parseResult = webVitalsEventSchema.safeParse(event);
+						if (!parseResult.success) {
+							await logBlockedTraffic(
+								request,
+								event,
+								query,
+								'invalid_schema',
+								'Schema Validation',
+								undefined,
+								clientId
+							);
+							return {
+								status: 'error',
+								message: 'Invalid event schema',
+								eventType,
+								errors: parseResult.error.issues,
+								eventId: event.payload?.eventId,
+							};
+						}
 					}
 					try {
 						await insertWebVitals(event, clientId, userAgent, ip);
@@ -1053,24 +1097,29 @@ const app = new Elysia()
 					}
 				}
 				if (eventType === 'custom') {	
-					const parseResult = customEventSchema.safeParse(event);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							event,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							eventType,
-							errors: parseResult.error.issues,
-							eventId: event.eventId,
-						};
+					let parseResult;
+					if (process.env.NODE_ENV === 'development') {
+						parseResult = { success: true, data: event };
+					} else {
+						parseResult = customEventSchema.safeParse(event);
+						if (!parseResult.success) {
+							await logBlockedTraffic(
+								request,
+								event,
+								query,
+								'invalid_schema',
+								'Schema Validation',
+								undefined,
+								clientId
+							);
+							return {
+								status: 'error',
+								message: 'Invalid event schema',
+								eventType,
+								errors: parseResult.error.issues,
+								eventId: event.eventId,
+							};
+						}
 					}
 					try {
 						// Generate eventId if not provided
@@ -1110,24 +1159,29 @@ const app = new Elysia()
 						};
 					}
 
-					const parseResult = outgoingLinkSchema.safeParse(event);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							event,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							eventType,
-							errors: parseResult.error.issues,
-							eventId: event.eventId,
-						};
+					let parseResult;
+					if (process.env.NODE_ENV === 'development') {
+						parseResult = { success: true, data: event };
+					} else {
+						parseResult = outgoingLinkSchema.safeParse(event);
+						if (!parseResult.success) {
+							await logBlockedTraffic(
+								request,
+								event,
+								query,
+								'invalid_schema',
+								'Schema Validation',
+								undefined,
+								clientId
+							);
+							return {
+								status: 'error',
+								message: 'Invalid event schema',
+								eventType,
+								errors: parseResult.error.issues,
+								eventId: event.eventId,
+							};
+						}
 					}
 					try {
 						await insertOutgoingLink(event, clientId, userAgent, ip);
@@ -1160,6 +1214,10 @@ const app = new Elysia()
 				processed: results.length,
 				results,
 			};
+			} catch (error) {
+				console.error('Error processing batch event:', error);
+				return { status: 'error', message: 'Internal server error' };
+			}
 		}
 	);
 
