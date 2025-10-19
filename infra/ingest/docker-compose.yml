@@ -80,4 +80,5 @@ volumes:
 
 networks:
   databuddy:
+    name: databuddy
     driver: bridge
