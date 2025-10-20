@@ -21,7 +21,8 @@ export const sendEventSync = async (topic: string, event: any) => {
     await producer.send({
       topic,
       messages: [{ value: event }],
-      compression: CompressionTypes.ZSTD,
+      timeout: 10000,
+      compression: CompressionTypes.GZIP,
     });
   } catch (err) {
     console.error('Failed to send event', err);
@@ -37,7 +38,8 @@ export const sendEvent = async (topic: string, event: any, key?: string) => {
         value: JSON.stringify(event),
         key: key || event.client_id
       }],
-      compression: CompressionTypes.ZSTD,
+      timeout: 10000,
+      compression: CompressionTypes.GZIP,
     });
   } catch (err) {
     console.error('Failed to send event', err);
