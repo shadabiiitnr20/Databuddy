@@ -1,8 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { Kafka, type Consumer } from 'kafkajs';
-import { disconnectProducer, sendEvent, sendMessageSync } from './producer';
+import { disconnectProducer, sendEvent, sendEventSync } from './producer';
 
-const KAFKA_BROKERS = process.env.KAFKA_BROKERS || 'localhost:9092';
+const KAFKA_BROKERS = process.env.KAFKA_BROKERS as string;
+console.log('KAFKA_BROKERS', KAFKA_BROKERS);
 const TEST_TOPIC = 'test';
 const TEST_GROUP_ID = 'producer-test-consumer';
 
@@ -58,7 +59,7 @@ describe('Producer Module', () => {
 
 			const initialCount = receivedMessages.length;
 
-			await sendMessageSync(TEST_TOPIC, testMessage);
+			await sendEventSync(TEST_TOPIC, testMessage);
 
 			await new Promise(resolve => setTimeout(resolve, 1000));
 			
@@ -78,7 +79,7 @@ describe('Producer Module', () => {
 			);
 
 			for (const message of messages) {
-				await sendMessageSync(TEST_TOPIC, message);
+				await sendEventSync(TEST_TOPIC, message);
 			}
 
 			await new Promise(resolve => setTimeout(resolve, 1500));
@@ -93,7 +94,7 @@ describe('Producer Module', () => {
 			const testMessage = JSON.stringify({ type: 'error-test' });
 			
 			await expect(
-				sendMessageSync('', testMessage)
+				sendEventSync('', testMessage)
 			).rejects.toThrow();
 		});
 	});

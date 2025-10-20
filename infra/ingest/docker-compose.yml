@@ -10,11 +10,12 @@ services:
       - redpanda_data:/var/lib/redpanda/data
     environment:
       REDPANDA_LOG_LEVEL: ${REDPANDA_LOG_LEVEL:-info}
+      REDPANDA_ADVERTISED_HOST: ${REDPANDA_ADVERTISED_HOST:-localhost}
     command:
       - redpanda
       - start
       - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://$${REDPANDA_ADVERTISED_HOST}:19092
       - --pandaproxy-addr internal://0.0.0.0:8082
       - --advertise-pandaproxy-addr internal://redpanda:8082
       - --schema-registry-addr internal://0.0.0.0:8081
