@@ -11,23 +11,28 @@ services:
     environment:
       REDPANDA_LOG_LEVEL: ${REDPANDA_LOG_LEVEL:-info}
       REDPANDA_ADVERTISED_HOST: ${REDPANDA_ADVERTISED_HOST:-localhost}
+    entrypoint: [ "/bin/bash", "-c" ]
     command:
-      - redpanda
-      - start
-      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-      - --advertise-kafka-addr internal://redpanda:9092,external://$${REDPANDA_ADVERTISED_HOST}:19092
-      - --pandaproxy-addr internal://0.0.0.0:8082
-      - --advertise-pandaproxy-addr internal://redpanda:8082
-      - --schema-registry-addr internal://0.0.0.0:8081
-      - --rpc-addr redpanda:33145
-      - --advertise-rpc-addr redpanda:33145
-      - --overprovisioned
-      - --smp 2
-      - --memory 2G
-      - --reserve-memory 0M
-      - --default-log-level=info
-      - --set redpanda.enable_sasl=true
-      - --set redpanda.superusers=['admin']
+      - |
+        if [ -z "$$REDPANDA_ADVERTISED_HOST" ]; then
+          REDPANDA_ADVERTISED_HOST=$$(ip route get 1.1.1.1 2>/dev/null | grep -oP 'src \K\S+' || hostname -i)
+        fi
+        echo "Advertising Kafka at: $$REDPANDA_ADVERTISED_HOST:19092"
+        exec /entrypoint.sh redpanda start \
+          --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092 \
+          --advertise-kafka-addr internal://redpanda:9092,external://$$REDPANDA_ADVERTISED_HOST:19092 \
+          --pandaproxy-addr internal://0.0.0.0:8082 \
+          --advertise-pandaproxy-addr internal://redpanda:8082 \
+          --schema-registry-addr internal://0.0.0.0:8081 \
+          --rpc-addr redpanda:33145 \
+          --advertise-rpc-addr redpanda:33145 \
+          --overprovisioned \
+          --smp 2 \
+          --memory 2G \
+          --reserve-memory 0M \
+          --default-log-level=info \
+          --set redpanda.enable_sasl=true \
+          --set "redpanda.superusers=['admin']"
     networks:
       - databuddy
     healthcheck:
