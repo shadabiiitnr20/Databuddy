@@ -14,7 +14,6 @@ sources:
     auto_offset_reset: earliest
     decoding:
       codec: json
-    partition_assignment: cooperative-sticky
 
 transforms:
   route_analytics:
