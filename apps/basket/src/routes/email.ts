@@ -6,6 +6,7 @@ import {
 	type EmailEventInput,
 	emailEventSchema,
 } from '@databuddy/validation';
+import { sendEvent } from '../lib/producer';
 import { Elysia } from 'elysia';
 import { logger } from '../lib/logger';
 
@@ -48,6 +49,17 @@ async function insertEmailEvent(emailData: EmailEventInput): Promise<void> {
 			values: [emailEvent],
 			format: 'JSONEachRow',
 		});
+
+		if (process.env.ENABLE_KAFKA_EVENTS === 'true') {
+			try {
+				sendEvent('analytics-email-events', emailEvent);
+			} catch (kafkaErr) {
+				logger.error('Failed to send email event to Kafka', {
+					error: kafkaErr as Error,
+					eventId: emailEvent.event_id,
+				});
+			}
+		}
 
 		logger.info('Email event inserted successfully', {
 			domain: emailEvent.domain,

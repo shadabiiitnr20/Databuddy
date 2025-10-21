@@ -5,27 +5,97 @@ sources:
     group_id: vector-analytics
     topics:
       - analytics-events
+      - analytics-errors
+      - analytics-web-vitals
+      - analytics-custom-events
+      - analytics-outgoing-links
+      - analytics-email-events
+      - analytics-blocked-traffic
     auto_offset_reset: earliest
     decoding:
       codec: json
+    partition_assignment: cooperative-sticky
 
-sinks:
-  clickhouse:
-    type: clickhouse
+transforms:
+  route_analytics:
+    type: route
     inputs:
       - redpanda
-    endpoint: "${CLICKHOUSE_URL}"
-    database: analytics
+    route:
+      events: '.topic == "analytics-events"'
+      errors: '.topic == "analytics-errors"'
+      web_vitals: '.topic == "analytics-web-vitals"'
+      custom_events: '.topic == "analytics-custom-events"'
+      outgoing_links: '.topic == "analytics-outgoing-links"'
+      email_events: '.topic == "analytics-email-events"'
+      blocked_traffic: '.topic == "analytics-blocked-traffic"'
+
+sink_defaults: &ch_defaults
+  type: clickhouse
+  endpoint: "${CLICKHOUSE_URL}"
+  database: analytics
+  auth:
+    strategy: basic
+    user: "${CLICKHOUSE_USER}"
+    password: "${CLICKHOUSE_PASSWORD}"
+  batch:
+    max_events: 5000
+    max_bytes: 5000000
+    timeout_secs: 5
+  date_time_best_effort: true
+  skip_unknown_fields: true
+  encoding:
+    timestamp_format: unix_ms
+
+sinks:
+  clickhouse_events:
+    <<: *ch_defaults
+    inputs:
+      - route_analytics.events
     table: events
-    auth:
-      strategy: basic
-      user: "${CLICKHOUSE_USER}"
-      password: "${CLICKHOUSE_PASSWORD}"
-    batch:
-      max_events: 1000
-      max_bytes: 5000000
-      timeout_secs: 5
-    date_time_best_effort: true
-    skip_unknown_fields: true
+
+  clickhouse_errors:
+    <<: *ch_defaults
+    inputs:
+      - route_analytics.errors
+    table: errors
+
+  clickhouse_web_vitals:
+    <<: *ch_defaults
+    inputs:
+      - route_analytics.web_vitals
+    table: web_vitals
+
+  clickhouse_custom_events:
+    <<: *ch_defaults
+    inputs:
+      - route_analytics.custom_events
+    table: custom_events
+
+  clickhouse_outgoing_links:
+    <<: *ch_defaults
+    inputs:
+      - route_analytics.outgoing_links
+    table: outgoing_links
+
+  clickhouse_email_events:
+    <<: *ch_defaults
+    inputs:
+      - route_analytics.email_events
+    table: email_events
+
+  clickhouse_blocked_traffic:
+    <<: *ch_defaults
+    inputs:
+      - route_analytics.blocked_traffic
+    table: blocked_traffic
+
+  dead_letters:
+    type: file
+    inputs:
+      - route_analytics._unmatched
+    path: /var/log/vector/dead_letters.log
     encoding:
-      timestamp_format: unix_ms
+      codec: json
+
+

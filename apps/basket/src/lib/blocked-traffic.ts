@@ -7,6 +7,7 @@ import {
 import { extractIpFromRequest, getGeo } from '../utils/ip-geo';
 import { parseUserAgent } from '../utils/user-agent';
 import { sanitizeString, VALIDATION_LIMITS } from '../utils/validation';
+import { sendEvent } from './producer';
 
 /**
  * Log blocked traffic for security and monitoring purposes
@@ -93,7 +94,9 @@ export async function logBlockedTraffic(
 				format: 'JSONEachRow',
 			})
 			.then(() => {
-				// Successfully logged blocked traffic
+				if (process.env.ENABLE_KAFKA_EVENTS === 'true') {
+					sendEvent('analytics-blocked-traffic', blockedEvent);
+				}
 			})
 			.catch((err) => {
 				console.error('Failed to log blocked traffic', { error: err as Error });
