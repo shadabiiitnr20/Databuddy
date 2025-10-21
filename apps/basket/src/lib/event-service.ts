@@ -5,7 +5,6 @@ import {
 	type CustomOutgoingLink,
 	type ErrorEvent,
 	type WebVitalsEvent,
-	clickHouse,
 } from '@databuddy/db';
 import { checkDuplicate } from './security';
 import { sendEvent } from './producer';
@@ -86,24 +85,9 @@ export async function insertError(
 	};
 
 	try {
-		await clickHouse.insert({
-			table: 'analytics.errors',
-			values: [errorEvent],
-			format: 'JSONEachRow',
-		});
-
-		if (process.env.ENABLE_KAFKA_EVENTS === 'true') {
-			try {
-				sendEvent('analytics-errors', errorEvent);
-			} catch (kafkaErr) {
-				console.error('Failed to send error event to Kafka', {
-					error: kafkaErr as Error,
-					eventId,
-				});
-			}
-		}
+		sendEvent('analytics-errors', errorEvent);
 	} catch (err) {
-		console.error('Failed to insert error event', {
+		console.error('Failed to send error event to Kafka', {
 			error: err as Error,
 			eventId,
 		});
@@ -168,24 +152,9 @@ export async function insertWebVitals(
 	};
 
 	try {
-		await clickHouse.insert({
-			table: 'analytics.web_vitals',
-			values: [webVitalsEvent],
-			format: 'JSONEachRow',
-		});
-
-		if (process.env.ENABLE_KAFKA_EVENTS === 'true') {
-			try {
-				sendEvent('analytics-web-vitals', webVitalsEvent);
-			} catch (kafkaErr) {
-				console.error('Failed to send web vitals event to Kafka', {
-					error: kafkaErr as Error,
-					eventId,
-				});
-			}
-		}
+		sendEvent('analytics-web-vitals', webVitalsEvent);
 	} catch (err) {
-		console.error('Failed to insert web vitals event', {
+		console.error('Failed to send web vitals event to Kafka', {
 			error: err as Error,
 			eventId,
 		});
@@ -237,24 +206,9 @@ export async function insertCustomEvent(
 	};
 
 	try {
-		await clickHouse.insert({
-			table: 'analytics.custom_events',
-			values: [customEvent],
-			format: 'JSONEachRow',
-		});
-
-		if (process.env.ENABLE_KAFKA_EVENTS === 'true') {
-			try {
-				sendEvent('analytics-custom-events', customEvent);
-			} catch (kafkaErr) {
-				console.error('Failed to send custom event to Kafka', {
-					error: kafkaErr as Error,
-					eventId,
-				});
-			}
-		}
+		sendEvent('analytics-custom-events', customEvent);
 	} catch (err) {
-		console.error('Failed to insert custom event', {
+		console.error('Failed to send custom event to Kafka', {
 			error: err as Error,
 			eventId,
 		});
@@ -304,24 +258,9 @@ export async function insertOutgoingLink(
 	};
 
 	try {
-		await clickHouse.insert({
-			table: 'analytics.outgoing_links',
-			values: [outgoingLinkEvent],
-			format: 'JSONEachRow',
-		});
-
-		if (process.env.ENABLE_KAFKA_EVENTS === 'true') {
-			try {
-				sendEvent('analytics-outgoing-links', outgoingLinkEvent);
-			} catch (kafkaErr) {
-				console.error('Failed to send outgoing link event to Kafka', {
-					error: kafkaErr as Error,
-					eventId,
-				});
-			}
-		}
+		sendEvent('analytics-outgoing-links', outgoingLinkEvent);
 	} catch (err) {
-		console.error('Failed to insert outgoing link event', {
+		console.error('Failed to send outgoing link event to Kafka', {
 			error: err as Error,
 			eventId,
 		});
@@ -330,7 +269,7 @@ export async function insertOutgoingLink(
 }
 
 /**
- * Insert a track event (pageview/analytics event) into ClickHouse
+ * Insert a track event (pageview/analytics event) via Kafka
  */
 export async function insertTrackEvent(
 	trackData: any,
@@ -443,24 +382,9 @@ export async function insertTrackEvent(
 	};
 
 	try {
-		await clickHouse.insert({
-			table: 'analytics.events',
-			values: [trackEvent],
-			format: 'JSONEachRow',
-		});
-
-		if (process.env.ENABLE_KAFKA_EVENTS === 'true') {
-			try {
-				sendEvent('analytics-events', trackEvent);
-			} catch (kafkaErr) {
-				console.error('Failed to send track event to Kafka', {
-					error: kafkaErr as Error,
-					eventId,
-				});
-			}
-		}
+		sendEvent('analytics-events', trackEvent);
 	} catch (err) {
-		console.error('Failed to insert track event', {
+		console.error('Failed to send track event to Kafka', {
 			error: err as Error,
 			eventId,
 		});

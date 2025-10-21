@@ -1,9 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import {
-	type AnalyticsEvent,
-	type BlockedTraffic,
-	clickHouse,
-} from '@databuddy/db';
+import { type BlockedTraffic } from '@databuddy/db';
 import { extractIpFromRequest, getGeo } from '../utils/ip-geo';
 import { parseUserAgent } from '../utils/user-agent';
 import { sanitizeString, VALIDATION_LIMITS } from '../utils/validation';
@@ -87,23 +83,11 @@ export async function logBlockedTraffic(
 			created_at: now,
 		};
 
-		clickHouse
-			.insert({
-				table: 'analytics.blocked_traffic',
-				values: [blockedEvent],
-				format: 'JSONEachRow',
-			})
-			.then(() => {
-				if (process.env.ENABLE_KAFKA_EVENTS === 'true') {
-					sendEvent('analytics-blocked-traffic', blockedEvent);
-				}
-			})
-			.catch((err) => {
-				console.error('Failed to log blocked traffic', { error: err as Error });
-				throw err;
-			});
+		sendEvent('analytics-blocked-traffic', blockedEvent);
 	} catch (error) {
-		console.error('Failed to log blocked traffic', { error: error as Error });
+		console.error('Failed to send blocked traffic to Kafka', {
+			error: error as Error,
+		});
 		throw error;
 	}
 }
