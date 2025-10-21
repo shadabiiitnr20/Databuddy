@@ -16,11 +16,14 @@ let connected = false;
 await producer.connect();
 connected = true;
 
-export const sendEventSync = async (topic: string, event: any) => {
+export const sendEventSync = async (topic: string, event: any, key?: string) => {
   try {
     await producer.send({
       topic,
-      messages: [{ value: event }],
+      messages: [{ 
+        value: JSON.stringify(event),
+        key: key || event.client_id
+      }],
       timeout: 10000,
       compression: CompressionTypes.GZIP,
     });
