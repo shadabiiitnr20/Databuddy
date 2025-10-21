@@ -29,65 +29,146 @@ transforms:
       email_events: '.topic == "analytics-email-events"'
       blocked_traffic: '.topic == "analytics-blocked-traffic"'
 
-sink_defaults: &ch_defaults
-  type: clickhouse
-  endpoint: "${CLICKHOUSE_URL}"
-  database: analytics
-  auth:
-    strategy: basic
-    user: "${CLICKHOUSE_USER}"
-    password: "${CLICKHOUSE_PASSWORD}"
-  batch:
-    max_events: 5000
-    max_bytes: 5000000
-    timeout_secs: 5
-  date_time_best_effort: true
-  skip_unknown_fields: true
-  encoding:
-    timestamp_format: unix_ms
-
 sinks:
   clickhouse_events:
-    <<: *ch_defaults
+    type: clickhouse
     inputs:
       - route_analytics.events
+    endpoint: "${CLICKHOUSE_URL}"
+    database: analytics
     table: events
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_events: 5000
+      max_bytes: 5000000
+      timeout_secs: 5
+    date_time_best_effort: true
+    skip_unknown_fields: true
+    encoding:
+      timestamp_format: unix_ms
 
   clickhouse_errors:
-    <<: *ch_defaults
+    type: clickhouse
     inputs:
       - route_analytics.errors
+    endpoint: "${CLICKHOUSE_URL}"
+    database: analytics
     table: errors
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_events: 5000
+      max_bytes: 5000000
+      timeout_secs: 5
+    date_time_best_effort: true
+    skip_unknown_fields: true
+    encoding:
+      timestamp_format: unix_ms
 
   clickhouse_web_vitals:
-    <<: *ch_defaults
+    type: clickhouse
     inputs:
       - route_analytics.web_vitals
+    endpoint: "${CLICKHOUSE_URL}"
+    database: analytics
     table: web_vitals
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_events: 5000
+      max_bytes: 5000000
+      timeout_secs: 5
+    date_time_best_effort: true
+    skip_unknown_fields: true
+    encoding:
+      timestamp_format: unix_ms
 
   clickhouse_custom_events:
-    <<: *ch_defaults
+    type: clickhouse
     inputs:
       - route_analytics.custom_events
+    endpoint: "${CLICKHOUSE_URL}"
+    database: analytics
     table: custom_events
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_events: 5000
+      max_bytes: 5000000
+      timeout_secs: 5
+    date_time_best_effort: true
+    skip_unknown_fields: true
+    encoding:
+      timestamp_format: unix_ms
 
   clickhouse_outgoing_links:
-    <<: *ch_defaults
+    type: clickhouse
     inputs:
       - route_analytics.outgoing_links
+    endpoint: "${CLICKHOUSE_URL}"
+    database: analytics
     table: outgoing_links
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_events: 5000
+      max_bytes: 5000000
+      timeout_secs: 5
+    date_time_best_effort: true
+    skip_unknown_fields: true
+    encoding:
+      timestamp_format: unix_ms
 
   clickhouse_email_events:
-    <<: *ch_defaults
+    type: clickhouse
     inputs:
       - route_analytics.email_events
+    endpoint: "${CLICKHOUSE_URL}"
+    database: analytics
     table: email_events
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_events: 5000
+      max_bytes: 5000000
+      timeout_secs: 5
+    date_time_best_effort: true
+    skip_unknown_fields: true
+    encoding:
+      timestamp_format: unix_ms
 
   clickhouse_blocked_traffic:
-    <<: *ch_defaults
+    type: clickhouse
     inputs:
       - route_analytics.blocked_traffic
+    endpoint: "${CLICKHOUSE_URL}"
+    database: analytics
     table: blocked_traffic
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_events: 5000
+      max_bytes: 5000000
+      timeout_secs: 5
+    date_time_best_effort: true
+    skip_unknown_fields: true
+    encoding:
+      timestamp_format: unix_ms
 
   dead_letters:
     type: file
@@ -96,5 +177,6 @@ sinks:
     path: /var/log/vector/dead_letters.log
     encoding:
       codec: json
+
 
 
