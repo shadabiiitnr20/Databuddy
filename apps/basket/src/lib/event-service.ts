@@ -333,8 +333,7 @@ export async function insertTrackEvent(
 		title: sanitizeString(trackData.title, VALIDATION_LIMITS.STRING_MAX_LENGTH),
 
 		ip: anonymizedIP || '',
-		user_agent:
-			sanitizeString(userAgent, VALIDATION_LIMITS.STRING_MAX_LENGTH) || '',
+		user_agent: '',
 		browser_name: browserName || '',
 		browser_version: browserVersion || '',
 		os_name: osName || '',
