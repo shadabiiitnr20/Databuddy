@@ -41,8 +41,6 @@ const app = new Elysia()
 
 const port = process.env.PORT || 4000;
 
-await new Promise(resolve => setTimeout(resolve, 400));
-
 console.log(`Starting basket service on port ${port}`);
 console.log(`Basket service running on http://localhost:${port}`);
 

@@ -13,11 +13,17 @@ const producer = kafka.producer({
 });
 
 let connected = false;
-await producer.connect();
-connected = true;
+
+const connectProducer = async () => {
+  if (!connected) {
+    await producer.connect();
+    connected = true;
+  }
+};
 
 export const sendEventSync = async (topic: string, event: any, key?: string) => {
   try {
+    await connectProducer();
     await producer.send({
       topic,
       messages: [{ 
@@ -35,6 +41,7 @@ export const sendEventSync = async (topic: string, event: any, key?: string) => 
 
 export const sendEvent = async (topic: string, event: any, key?: string) => {
   try {
+    await connectProducer();
     producer.send({
       topic,
       messages: [{ 
