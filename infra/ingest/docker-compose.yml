@@ -41,24 +41,6 @@ services:
       retries: 10
       start_period: 60s
 
-  console:
-    image: docker.redpanda.com/redpandadata/console:latest
-    container_name: redpanda-console
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      KAFKA_BROKERS: redpanda:9092
-      KAFKA_SASL_MECHANISM: scram-sha-256
-      KAFKA_SASL_USERNAME: ${VECTOR_KAFKA_USER}
-      KAFKA_SASL_PASSWORD: ${VECTOR_KAFKA_PASSWORD}
-      KAFKA_SASL_ENABLED: "true"
-    networks:
-      - databuddy
-    depends_on:
-      redpanda:
-        condition: service_healthy
-
   vector:
     image: timberio/vector:0.50.0-alpine
     container_name: vector
