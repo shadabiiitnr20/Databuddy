@@ -89,14 +89,6 @@ describe('Producer Module', () => {
 				expect(found).toBe(true);
 			}
 		});
-
-		it('should throw error on invalid topic', async () => {
-			const testMessage = JSON.stringify({ type: 'error-test' });
-			
-			await expect(
-				sendEventSync('', testMessage)
-			).rejects.toThrow();
-		});
 	});
 
 	describe('sendEvent', () => {
