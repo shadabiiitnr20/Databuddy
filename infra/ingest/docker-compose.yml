@@ -49,6 +49,10 @@ services:
       - "8080:8080"
     environment:
       KAFKA_BROKERS: redpanda:9092
+      KAFKA_SASL_MECHANISM: scram-sha-256
+      KAFKA_SASL_USERNAME: ${VECTOR_KAFKA_USER}
+      KAFKA_SASL_PASSWORD: ${VECTOR_KAFKA_PASSWORD}
+      KAFKA_SASL_ENABLED: "true"
     networks:
       - databuddy
     depends_on:
