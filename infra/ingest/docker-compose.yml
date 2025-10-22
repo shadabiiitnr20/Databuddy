@@ -62,12 +62,12 @@ services:
     volumes:
       - ./vector.yaml:/etc/vector/vector.yaml:ro
     environment:
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-defaultpass}
       CLICKHOUSE_URL: ${CLICKHOUSE_URL:-http://clickhouse:8123}
       VECTOR_LOG: ${VECTOR_LOG:-info}
-      VECTOR_KAFKA_USER: ${VECTOR_KAFKA_USER}
-      VECTOR_KAFKA_PASSWORD: ${VECTOR_KAFKA_PASSWORD}
+      VECTOR_KAFKA_USER: ${VECTOR_KAFKA_USER:-vector-agent}
+      VECTOR_KAFKA_PASSWORD: ${VECTOR_KAFKA_PASSWORD:-super_secret_password}
       REDPANDA_BROKER: ${REDPANDA_BROKER:-redpanda:9092}
     networks:
       - databuddy

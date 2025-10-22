@@ -20,11 +20,6 @@ describe('Kafka Producer and Consumer', () => {
 				initialRetryTime: 100,
 				retries: 8,
 			},
-			sasl: {
-				mechanism: 'scram-sha-256',
-				username: process.env.KAFKA_USER as string,
-				password: process.env.KAFKA_PASSWORD as string,
-			},
 		});
 
 		producer = kafka.producer();
