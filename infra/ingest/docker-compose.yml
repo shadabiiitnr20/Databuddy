@@ -30,7 +30,6 @@ services:
           --memory 2G \
           --reserve-memory 0M \
           --default-log-level=info \
-          --set redpanda.enable_sasl=true \
           --set "redpanda.superusers=['admin']"
     networks:
       - databuddy
