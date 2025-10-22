@@ -41,6 +41,20 @@ services:
       retries: 10
       start_period: 60s
 
+  console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: redpanda-console
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    networks:
+      - databuddy
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
   vector:
     image: timberio/vector:0.50.0-alpine
     container_name: vector
@@ -48,12 +62,12 @@ services:
     volumes:
       - ./vector.yaml:/etc/vector/vector.yaml:ro
     environment:
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-defaultpass}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
       CLICKHOUSE_URL: ${CLICKHOUSE_URL:-http://clickhouse:8123}
       VECTOR_LOG: ${VECTOR_LOG:-info}
-      VECTOR_KAFKA_USER: ${VECTOR_KAFKA_USER:-vector-agent}
-      VECTOR_KAFKA_PASSWORD: ${VECTOR_KAFKA_PASSWORD:-super_secret_password}
+      VECTOR_KAFKA_USER: ${VECTOR_KAFKA_USER}
+      VECTOR_KAFKA_PASSWORD: ${VECTOR_KAFKA_PASSWORD}
       REDPANDA_BROKER: ${REDPANDA_BROKER:-redpanda:9092}
     networks:
       - databuddy
