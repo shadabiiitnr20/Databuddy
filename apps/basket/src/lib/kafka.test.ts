@@ -20,6 +20,11 @@ describe('Kafka Producer and Consumer', () => {
 				initialRetryTime: 100,
 				retries: 8,
 			},
+			sasl: {
+				mechanism: 'scram-sha-256',
+				username: process.env.KAFKA_USER as string,
+				password: process.env.KAFKA_PASSWORD as string,
+			},
 		});
 
 		producer = kafka.producer();
@@ -72,6 +77,7 @@ describe('Kafka Producer and Consumer', () => {
 			await admin.connect();
 			
 			const topics = await admin.listTopics();
+			console.log('topics', topics);
 			expect(Array.isArray(topics)).toBe(true);
 			
 			await admin.disconnect();

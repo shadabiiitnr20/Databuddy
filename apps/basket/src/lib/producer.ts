@@ -68,7 +68,7 @@ if (BROKER) {
 		requestTimeout: KAFKA_TIMEOUT,
 		sasl:{
 			mechanism: 'scram-sha-256',
-			username: process.env.KAFKA_USERNAME as string,
+			username: process.env.KAFKA_USER as string,
 			password: process.env.KAFKA_PASSWORD as string,
 		}
 	});

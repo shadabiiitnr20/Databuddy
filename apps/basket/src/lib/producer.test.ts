@@ -16,6 +16,11 @@ describe('Producer Module', () => {
 		kafka = new Kafka({
 			clientId: 'producer-test',
 			brokers: [KAFKA_BROKERS],
+			sasl: {
+				mechanism: 'scram-sha-256',
+				username: process.env.KAFKA_USER as string,
+				password: process.env.KAFKA_PASSWORD as string,
+			},
 			retry: {
 				initialRetryTime: 100,
 				retries: 8,
@@ -264,9 +269,6 @@ describe('Producer Module', () => {
 			expect(disconnectProducer).toBeDefined();
 		});
 
-		it('should be idempotent', async () => {
-			expect(disconnectProducer).toBeDefined();
-		});
 	});
 
 	describe('Analytics Events', () => {
