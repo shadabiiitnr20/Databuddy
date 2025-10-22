@@ -35,8 +35,7 @@ const mockDb = {
 		},
 	},
 };
-
-// Mock modules
+	
 mock.module('./lib/logger', () => ({
 	logger: mockLogger,
 }));
@@ -76,7 +75,6 @@ mock.module('./routes/basket', () => ({
 						results
 					}), { status: 200 }));
 				}).catch(() => {
-					// Fallback if JSON parsing fails
 					return Promise.resolve(new Response(JSON.stringify({ 
 						status: 'success', 
 						batch: true,
@@ -86,7 +84,6 @@ mock.module('./routes/basket', () => ({
 				});
 			}
 			
-			// Parse the request body to determine the event type
 			return request.json().then((body) => {
 				const eventType = body.type || 'track';
 				return Promise.resolve(new Response(JSON.stringify({ 
@@ -94,7 +91,6 @@ mock.module('./routes/basket', () => ({
 					type: eventType 
 				}), { status: 200 }));
 			}).catch(() => {
-				// Fallback if JSON parsing fails
 				return Promise.resolve(new Response(JSON.stringify({ 
 					status: 'success', 
 					type: 'track' 
@@ -118,7 +114,6 @@ mock.module('./routes/stripe', () => ({
 
 describe('Basket App', () => {
 	beforeEach(() => {
-		// Reset all mocks
 		mockLogger.info.mockClear();
 		mockLogger.warn.mockClear();
 		mockLogger.error.mockClear();
@@ -154,6 +149,17 @@ describe('Basket App', () => {
 			expect(data).toEqual({
 				status: 'ok',
 				version: '1.0.0',
+				producer_stats: {
+					kafkaSent: 0,
+					kafkaFailed: 0,
+					buffered: 0,
+					flushed: 0,
+					dropped: 0,
+					errors: 0,
+					bufferSize: 0,
+					connected: false,
+					failed: false,
+				},
 			});
 		});
 
@@ -202,7 +208,6 @@ describe('Basket App', () => {
 		it('should handle requests without origin', async () => {
 			const response = await app.fetch(new Request('http://localhost:4000/health'));
 			expect(response.status).toBe(200);
-			// Should not crash when no origin is provided
 		});
 
 		it('should include custom headers in CORS', async () => {
@@ -230,13 +235,11 @@ describe('Basket App', () => {
 				body: 'invalid json',
 			}));
 			
-			// Should not crash the server
 			expect([200, 400, 500]).toContain(response.status);
 		});
 
 		it('should handle requests to non-existent endpoints', async () => {
 			const response = await app.fetch(new Request('http://localhost:4000/non-existent'));
-			// Should handle gracefully without crashing
 			expect([200, 404, 405]).toContain(response.status);
 		});
 

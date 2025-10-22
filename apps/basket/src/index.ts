@@ -6,6 +6,7 @@ import { disconnectProducer } from './lib/producer';
 import basketRouter from './routes/basket';
 import emailRouter from './routes/email';
 import stripeRouter from './routes/stripe';
+import { getProducerStats } from './lib/producer';
 import './polyfills/compression';
 // import { checkBotId } from "botid/server";
 
@@ -37,7 +38,7 @@ const app = new Elysia()
 	.use(basketRouter)
 	.use(stripeRouter)
 	.use(emailRouter)
-	.get('/health', () => ({ status: 'ok', version: '1.0.0' }));
+	.get('/health', () => ({ status: 'ok', version: '1.0.0', producer_stats: getProducerStats() }));
 
 const port = process.env.PORT || 4000;
 
