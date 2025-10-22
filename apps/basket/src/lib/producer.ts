@@ -66,6 +66,11 @@ if (BROKER) {
 		brokers: [BROKER],
 		connectionTimeout: 5000,
 		requestTimeout: KAFKA_TIMEOUT,
+		sasl:{
+			mechanism: 'scram-sha-256',
+			username: process.env.KAFKA_USERNAME as string,
+			password: process.env.KAFKA_PASSWORD as string,
+		}
 	});
 	producer = kafka.producer({
 		allowAutoTopicCreation: true,
