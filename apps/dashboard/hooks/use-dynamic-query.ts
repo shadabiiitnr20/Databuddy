@@ -18,7 +18,7 @@ import {
 } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { formatDuration } from '@/lib/utils';
-import { usePreferences } from './use-preferences';
+import { getUserTimezone } from '@/lib/timezone';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -70,31 +70,6 @@ const defaultQueryOptions = {
 	placeholderData: undefined, // Don't use placeholder data to ensure loading states show
 };
 
-/**
- * Hook to get the user's effective timezone
- */
-function useUserTimezone(): string {
-	const { preferences } = usePreferences();
-
-	// Get browser timezone as fallback
-	const browserTimezone = useMemo(() => {
-		try {
-			return Intl.DateTimeFormat().resolvedOptions().timeZone;
-		} catch {
-			return 'UTC';
-		}
-	}, []);
-
-	// Return user's preferred timezone or browser timezone if 'auto'
-	if (!preferences) {
-		return browserTimezone;
-	}
-
-	return preferences.timezone === 'auto'
-		? browserTimezone
-		: preferences.timezone;
-}
-
 function transformFilters(filters?: DynamicQueryRequest['filters']) {
 	return filters?.map(({ field, operator, value }) => ({
 		field,
@@ -108,10 +83,9 @@ async function fetchDynamicQuery(
 	websiteId: string,
 	dateRange: DateRange,
 	queryData: DynamicQueryRequest | DynamicQueryRequest[],
-	signal?: AbortSignal,
-	userTimezone?: string
+	signal?: AbortSignal
 ): Promise<DynamicQueryResponse | BatchQueryResponse> {
-	const timezone = userTimezone || 'UTC';
+	const timezone = getUserTimezone();
 	const params = buildParams(websiteId, dateRange, { timezone });
 	const url = `${API_BASE_URL}/v1/query?${params}`;
 
@@ -174,24 +148,21 @@ export function useDynamicQuery<T extends (keyof ParameterDataMap)[]>(
 	queryData: DynamicQueryRequest,
 	options?: Partial<UseQueryOptions<DynamicQueryResponse>>
 ) {
-	const userTimezone = useUserTimezone();
-
 	const fetchData = useCallback(
 		async ({ signal }: { signal?: AbortSignal }) => {
 			const result = await fetchDynamicQuery(
 				websiteId,
 				dateRange,
 				queryData,
-				signal,
-				userTimezone
+				signal
 			);
 			return result as DynamicQueryResponse;
 		},
-		[websiteId, dateRange, queryData, userTimezone]
+		[websiteId, dateRange, queryData]
 	);
 
 	const query = useQuery({
-		queryKey: ['dynamic-query', websiteId, dateRange, queryData, userTimezone],
+		queryKey: ['dynamic-query', websiteId, dateRange, queryData],
 		queryFn: fetchData,
 		...defaultQueryOptions,
 		...options,
@@ -250,21 +221,18 @@ export function useBatchDynamicQuery(
 	queries: DynamicQueryRequest[],
 	options?: Partial<UseQueryOptions<BatchQueryResponse>>
 ) {
-	const userTimezone = useUserTimezone();
-
 	const fetchData = useCallback(
 		async ({ signal }: { signal?: AbortSignal }) => {
 			const result = await fetchDynamicQuery(
 				websiteId,
 				dateRange,
 				queries,
-				signal,
-				userTimezone
+				signal
 			);
 			// Ensure we return a batch query response
 			return result as BatchQueryResponse;
 		},
-		[websiteId, dateRange, queries, userTimezone]
+		[websiteId, dateRange, queries]
 	);
 
 	const query = useQuery({
