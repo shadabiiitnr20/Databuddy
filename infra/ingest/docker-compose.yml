@@ -29,8 +29,7 @@ services:
           --smp 2 \
           --memory 2G \
           --reserve-memory 0M \
-          --default-log-level=info \
-          --set "redpanda.superusers=['admin']"
+          --default-log-level=info
     networks:
       - databuddy
     healthcheck:

@@ -20,11 +20,17 @@ describe('Producer Module', () => {
 				initialRetryTime: 100,
 				retries: 8,
 			},
+			sasl: {
+				mechanism: 'scram-sha-256',
+				username: process.env.KAFKA_USER as string,
+				password: process.env.KAFKA_PASSWORD as string,
+			},
 		});
 
 		consumer = kafka.consumer({ 
 			groupId: TEST_GROUP_ID,
 			sessionTimeout: 10000,
+			allowAutoTopicCreation: true,
 		});
 
 		await consumer.connect();

@@ -20,12 +20,18 @@ describe('Kafka Producer and Consumer', () => {
 				initialRetryTime: 100,
 				retries: 8,
 			},
+			sasl: {
+				mechanism: 'scram-sha-256',
+				username: process.env.KAFKA_USER as string,
+				password: process.env.KAFKA_PASSWORD as string,
+			},
 		});
 
 		producer = kafka.producer();
 		consumer = kafka.consumer({ 
 			groupId: TEST_GROUP_ID,
 			sessionTimeout: 10000,
+			allowAutoTopicCreation: true,
 			heartbeatInterval: 3000,
 		});
 
