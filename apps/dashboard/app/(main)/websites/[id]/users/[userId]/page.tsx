@@ -53,7 +53,6 @@ export default function UserDetailPage() {
 		});
 	}, []);
 
-	// Transform user profile sessions to match Session interface
 	const transformSession = useCallback((session: any): Session => {
 		const countryCode = getCountryCode(session.country || '');
 		return {

@@ -28,6 +28,7 @@ import { useDateFilters } from '@/hooks/use-date-filters';
 import { useProfilesData } from '@/hooks/use-dynamic-query';
 import { getDeviceIcon } from '@/lib/utils';
 import { dynamicQueryFiltersAtom } from '@/stores/jotai/filterAtoms';
+import { generateProfileName } from '../[userId]/_components/generate-profile-name';
 
 interface UsersListProps {
 	websiteId: string;
@@ -128,21 +129,24 @@ export function UsersList({ websiteId }: UsersListProps) {
 			},
 			{
 				id: 'user_id',
-				header: 'User ID',
+				header: 'User',
 				accessorKey: 'visitor_id',
-				cell: ({ row }) => (
-					<div className="flex items-center gap-2">
-						<div className="min-w-0">
-							<div className="truncate font-semibold text-foreground text-sm">
-								{row.original.visitor_id.substring(0, 12)}...
-							</div>
-							<div className="truncate text-muted-foreground text-xs">
-								ID: {row.original.visitor_id.slice(-8)}
+				cell: ({ row }) => {
+					const profileName = generateProfileName(row.original.visitor_id);
+					return (
+						<div className="flex items-center gap-2">
+							<div className="min-w-0">
+								<div className="truncate font-semibold text-foreground text-sm">
+									{profileName}
+								</div>
+								<div className="truncate text-muted-foreground text-xs">
+									ID: {row.original.visitor_id.slice(-8)}
+								</div>
 							</div>
 						</div>
-					</div>
-				),
-				size: 180,
+					);
+				},
+				size: 200,
 			},
 			{
 				id: 'location',
