@@ -5,12 +5,8 @@
   "scripts": {
     "dev": "bun --watch run src/index.ts",
     "start": "bun run src/index.ts",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:routes": "bun test src/routes/*.test.ts",
-    "test:utils": "bun test src/utils/*.test.ts",
-    "test:kafka": "bun test src/lib/kafka.test.ts src/lib/producer.test.ts",
-    "test:coverage": "bun test --coverage"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@clickhouse/client": "catalog:",

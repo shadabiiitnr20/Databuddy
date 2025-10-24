@@ -1,31 +1,31 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import app from './index';
 
 // Mock external dependencies
 const mockLogger = {
-	info: mock(() => {}),
-	warn: mock(() => {}),
-	error: mock(() => {}),
+	info: vi.fn(() => {}),
+	warn: vi.fn(() => {}),
+	error: vi.fn(() => {}),
 };
 
 const mockClickHouse = {
-	insert: mock(() => Promise.resolve()),
+	insert: vi.fn(() => Promise.resolve()),
 };
 
 const mockRedis = {
-	get: mock(() => Promise.resolve(null)),
-	setex: mock(() => Promise.resolve()),
-	exists: mock(() => Promise.resolve(false)),
+	get: vi.fn(() => Promise.resolve(null)),
+	setex: vi.fn(() => Promise.resolve()),
+	exists: vi.fn(() => Promise.resolve(false)),
 };
 
 const mockAutumn = {
-	check: mock(() => Promise.resolve({ data: { allowed: true } })),
+	check: vi.fn(() => Promise.resolve({ data: { allowed: true } })),
 };
 
 const mockDb = {
 	query: {
 		websites: {
-			findFirst: mock(() => Promise.resolve({
+			findFirst: vi.fn(() => Promise.resolve({
 				id: 'test-client-id',
 				domain: 'example.com',
 				status: 'ACTIVE',
@@ -36,26 +36,26 @@ const mockDb = {
 	},
 };
 	
-mock.module('./lib/logger', () => ({
+vi.mock('./lib/logger', () => ({
 	logger: mockLogger,
 }));
 
-mock.module('@databuddy/db', () => ({
+vi.mock('@databuddy/db', () => ({
 	clickHouse: mockClickHouse,
 	db: mockDb,
 }));
 
-mock.module('@databuddy/redis', () => ({
+vi.mock('@databuddy/redis', () => ({
 	redis: mockRedis,
 }));
 
-mock.module('autumn-js', () => ({
+vi.mock('autumn-js', () => ({
 	Autumn: mockAutumn,
 }));
 
-mock.module('./routes/basket', () => ({
+vi.mock('./routes/basket', () => ({
 	default: {
-		fetch: mock((request: Request) => {
+		fetch: vi.fn((request: Request) => {
 			const url = new URL(request.url);
 			const isBatch = url.pathname.includes('/batch');
 			
@@ -100,15 +100,15 @@ mock.module('./routes/basket', () => ({
 	},
 }));
 
-mock.module('./routes/email', () => ({
+vi.mock('./routes/email', () => ({
 	default: {
-		fetch: mock(() => Promise.resolve(new Response(JSON.stringify({ status: 'success' }), { status: 200 }))),
+		fetch: vi.fn(() => Promise.resolve(new Response(JSON.stringify({ status: 'success' }), { status: 200 }))),
 	},
 }));
 
-mock.module('./routes/stripe', () => ({
+vi.mock('./routes/stripe', () => ({
 	default: {
-		fetch: mock(() => Promise.resolve(new Response(JSON.stringify({ status: 'success' }), { status: 200 }))),
+		fetch: vi.fn(() => Promise.resolve(new Response(JSON.stringify({ status: 'success' }), { status: 200 }))),
 	},
 }));
 
