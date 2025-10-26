@@ -23,7 +23,7 @@ export default function UsersPage() {
 	const { id: websiteId } = useParams();
 
 	return (
-		<div className="p-6">
+		<div>
 			<UsersList websiteId={websiteId as string} />
 		</div>
 	);
