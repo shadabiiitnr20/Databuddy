@@ -174,9 +174,9 @@ function WebsiteDetailsPage() {
 		: [{ id: 'tracking-setup', label: 'Setup Tracking' }];
 
 	return (
-		<div>
+		<div className="p-6">
 			<Tabs
-				className="space-y-4 py-6"
+				className="space-y-4"
 				defaultValue="overview"
 				onValueChange={(value) => setActiveTab(value as TabId)}
 				value={activeTab}
@@ -212,7 +212,7 @@ function WebsiteDetailsPage() {
 
 function TabLoadingSkeleton() {
 	return (
-		<div className="select-none space-y-6 py-8">
+		<div className="select-none space-y-6">
 			{/* Key metrics cards skeleton */}
 			<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
 				{[1, 2, 3, 4, 5, 6].map((num) => (
@@ -324,7 +324,7 @@ export default function Page() {
 
 function PageLoadingSkeleton() {
 	return (
-		<div className="mx-auto max-w-[1600px] select-none p-3 sm:p-4 lg:p-6">
+		<div className="select-none p-6">
 			<header className="border-b pb-3">
 				<div className="flex items-center justify-between">
 					<div className="space-y-2">

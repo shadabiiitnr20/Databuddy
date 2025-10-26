@@ -188,7 +188,7 @@ export default function ExperimentsPage() {
 
 	if (experimentsError) {
 		return (
-			<div className="mx-auto max-w-[1600px] p-3 sm:p-4 lg:p-6">
+			<div className="p-6">
 				<Card className="rounded border-destructive/20 bg-destructive/10">
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ export default function ExperimentsPage() {
 	}
 
 	return (
-		<div className="mx-auto mt-6 max-w-[1600px] space-y-4" ref={pageRef}>
+		<div className="space-y-4 p-6" ref={pageRef}>
 			<WebsitePageHeader
 				createActionLabel="Create Experiment"
 				description="Test different variants and optimize conversions"

@@ -302,8 +302,8 @@ export function MapComponent({
 							Math.min(mapRef.current.getZoom() + 2, 12),
 							{
 								animate: true,
-								duration: 1.5,
-								easeLinearity: 0.25,
+								duration: 1.2,
+								easeLinearity: 0.5,
 							}
 						);
 					}
@@ -400,8 +400,8 @@ export function MapComponent({
 		if (centroid) {
 			mapRef.current.flyTo([centroid.lat, centroid.lng], 7, {
 				animate: true,
-				duration: 2,
-				easeLinearity: 0.25,
+				duration: 1.5,
+				easeLinearity: 0.5,
 			});
 		}
 	}, [selectedCountry, countriesGeoData, calculateCountryCentroid]);
@@ -438,12 +438,12 @@ export function MapComponent({
 					center={[40, 3]}
 					className={resolvedTheme === 'dark' ? 'map-dark' : 'map-light'}
 					maxBounds={[
-						[-120, -400],
-						[120, 400],
+						[-90, -200],
+						[90, 200],
 					]}
-					maxBoundsViscosity={0.1}
-					maxZoom={8}
-					minZoom={1.5}
+					maxBoundsViscosity={0.5}
+					maxZoom={12}
+					minZoom={0.5}
 					preferCanvas
 					ref={mapRef}
 					style={{
@@ -455,6 +455,9 @@ export function MapComponent({
 					}}
 					zoom={zoom}
 					zoomControl={false}
+					zoomSnap={0.25}
+					zoomDelta={0.5}
+					wheelPxPerZoomLevel={60}
 				>
 					{mapView === 'countries' && countriesGeoData && (
 						<GeoJSON
