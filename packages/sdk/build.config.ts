@@ -18,8 +18,12 @@ export default defineBuildConfig({
 	},
 	hooks: {
 		'build:done': async () => {
-			const file = await readFile('./dist/react/index.mjs', 'utf-8');
-			await writeFile('./dist/react/index.mjs', `'use client';\n\n${file}`);
+			try {
+				const file = await readFile('./dist/react/index.mjs', 'utf-8');
+				await writeFile('./dist/react/index.mjs', `'use client';\n\n${file}`);
+			} catch (error) {
+				console.error('Failed to add "use client" directive:', error);
+			}
 		},
 	},
 });
