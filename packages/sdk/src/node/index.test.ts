@@ -609,5 +609,250 @@ describe('Databuddy', () => {
 			expect(client).toBeDefined();
 		});
 	});
+
+	describe('global properties', () => {
+		it('should attach global properties to events', async () => {
+			const client = new Databuddy({
+				clientId: 'test-client-id',
+				enableBatching: false,
+			});
+
+			client.setGlobalProperties({ environment: 'test', version: '1.0.0' });
+
+			const trackFetch = mock(() =>
+				Promise.resolve(
+					new Response(JSON.stringify({ status: 'success', eventId: 'evt_123' }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			);
+			global.fetch = trackFetch as any;
+
+			await client.track({ name: 'test_event', properties: { foo: 'bar' } });
+
+			expect(trackFetch).toHaveBeenCalledTimes(1);
+			const callArgs = trackFetch.mock.calls[0] as any;
+			const body = JSON.parse(callArgs[1].body);
+			expect(body.properties).toHaveProperty('environment', 'test');
+			expect(body.properties).toHaveProperty('version', '1.0.0');
+			expect(body.properties).toHaveProperty('foo', 'bar');
+		});
+
+		it('should allow event properties to override global properties', async () => {
+			const client = new Databuddy({
+				clientId: 'test-client-id',
+				enableBatching: false,
+			});
+
+			client.setGlobalProperties({ version: '1.0.0' });
+
+			const trackFetch = mock(() =>
+				Promise.resolve(
+					new Response(JSON.stringify({ status: 'success', eventId: 'evt_123' }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			);
+			global.fetch = trackFetch as any;
+
+			await client.track({ name: 'test_event', properties: { version: '2.0.0' } });
+
+			const callArgs = trackFetch.mock.calls[0] as any;
+			const body = JSON.parse(callArgs[1].body);
+			expect(body.properties).toHaveProperty('version', '2.0.0');
+		});
+
+		it('should get current global properties', () => {
+			const client = new Databuddy({ clientId: 'test-client-id' });
+			client.setGlobalProperties({ env: 'test' });
+			const props = client.getGlobalProperties();
+			expect(props).toEqual({ env: 'test' });
+		});
+
+		it('should clear global properties', () => {
+			const client = new Databuddy({ clientId: 'test-client-id' });
+			client.setGlobalProperties({ env: 'test' });
+			client.clearGlobalProperties();
+			const props = client.getGlobalProperties();
+			expect(props).toEqual({});
+		});
+	});
+
+	describe('middleware', () => {
+		it('should apply middleware to transform events', async () => {
+			const client = new Databuddy({
+				clientId: 'test-client-id',
+				enableBatching: false,
+			});
+
+			client.addMiddleware((event) => {
+				event.properties = { ...event.properties, processed: true };
+				return event;
+			});
+
+			const trackFetch = mock(() =>
+				Promise.resolve(
+					new Response(JSON.stringify({ status: 'success', eventId: 'evt_123' }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			);
+			global.fetch = trackFetch as any;
+
+			await client.track({ name: 'test_event' });
+
+			const callArgs = trackFetch.mock.calls[0] as any;
+			const body = JSON.parse(callArgs[1].body);
+			expect(body.properties).toHaveProperty('processed', true);
+		});
+
+		it('should drop events when middleware returns null', async () => {
+			const client = new Databuddy({
+				clientId: 'test-client-id',
+				enableBatching: false,
+			});
+
+			client.addMiddleware(() => null);
+
+			const trackFetch = mock(() =>
+				Promise.resolve(
+					new Response(JSON.stringify({ status: 'success', eventId: 'evt_123' }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			);
+			global.fetch = trackFetch as any;
+
+			const result = await client.track({ name: 'test_event' });
+
+			expect(result.success).toBe(true);
+			expect(trackFetch).not.toHaveBeenCalled();
+		});
+
+		it('should apply multiple middleware in order', async () => {
+			const client = new Databuddy({
+				clientId: 'test-client-id',
+				enableBatching: false,
+			});
+
+			client.addMiddleware((event) => {
+				event.properties = { ...event.properties, step1: true };
+				return event;
+			});
+
+			client.addMiddleware((event) => {
+				event.properties = { ...event.properties, step2: true };
+				return event;
+			});
+
+			const trackFetch = mock(() =>
+				Promise.resolve(
+					new Response(JSON.stringify({ status: 'success', eventId: 'evt_123' }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			);
+			global.fetch = trackFetch as any;
+
+			await client.track({ name: 'test_event' });
+
+			const callArgs = trackFetch.mock.calls[0] as any;
+			const body = JSON.parse(callArgs[1].body);
+			expect(body.properties).toHaveProperty('step1', true);
+			expect(body.properties).toHaveProperty('step2', true);
+		});
+
+		it('should clear middleware', () => {
+			const client = new Databuddy({ clientId: 'test-client-id' });
+			client.addMiddleware(() => null);
+			client.clearMiddleware();
+			expect(client).toBeDefined();
+		});
+	});
+
+	describe('deduplication', () => {
+		it('should deduplicate events by eventId', async () => {
+			const client = new Databuddy({
+				clientId: 'test-client-id',
+				enableBatching: false,
+			});
+
+			const trackFetch = mock(() =>
+				Promise.resolve(
+					new Response(JSON.stringify({ status: 'success', eventId: 'evt_123' }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			);
+			global.fetch = trackFetch as any;
+
+			await client.track({ name: 'test_event', eventId: 'unique_id_1' });
+			await client.track({ name: 'test_event', eventId: 'unique_id_1' }); // Duplicate
+
+			expect(trackFetch).toHaveBeenCalledTimes(1);
+		});
+
+		it('should allow different events with same eventId when deduplication is disabled', async () => {
+			const client = new Databuddy({
+				clientId: 'test-client-id',
+				enableBatching: false,
+				enableDeduplication: false,
+			});
+
+			const trackFetch = mock(() =>
+				Promise.resolve(
+					new Response(JSON.stringify({ status: 'success', eventId: 'evt_123' }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			);
+			global.fetch = trackFetch as any;
+
+			await client.track({ name: 'test_event', eventId: 'same_id' });
+			await client.track({ name: 'test_event', eventId: 'same_id' });
+
+			expect(trackFetch).toHaveBeenCalledTimes(2);
+		});
+
+		it('should handle events without eventId (no deduplication)', async () => {
+			const client = new Databuddy({
+				clientId: 'test-client-id',
+				enableBatching: false,
+			});
+
+			const trackFetch = mock(() =>
+				Promise.resolve(
+					new Response(JSON.stringify({ status: 'success', eventId: 'evt_123' }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			);
+			global.fetch = trackFetch as any;
+
+			await client.track({ name: 'test_event' });
+			await client.track({ name: 'test_event' });
+
+			expect(trackFetch).toHaveBeenCalledTimes(2);
+		});
+
+		it('should clear deduplication cache', () => {
+			const client = new Databuddy({ clientId: 'test-client-id' });
+			client.clearDeduplicationCache();
+			expect(client.getDeduplicationCacheSize()).toBe(0);
+		});
+
+		it('should get deduplication cache size', () => {
+			const client = new Databuddy({ clientId: 'test-client-id' });
+			expect(client.getDeduplicationCacheSize()).toBe(0);
+		});
+	});
 });
 
