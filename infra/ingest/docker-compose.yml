@@ -45,15 +45,10 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    volumes:
+      - ./console-config.yml:/etc/redpanda-console/config.yml:ro
     environment:
-      CONFIG_FILEPATH: /tmp/config.yml
-      CONSOLE_CONFIG_FILE: |
-        kafka:
-          brokers: ["redpanda:9092"]
-        redpanda:
-          adminApi:
-            enabled: true
-            urls: ["http://redpanda:9644"]
+      CONFIG_FILEPATH: /etc/redpanda-console/config.yml
     networks:
       - databuddy
     depends_on:
