@@ -2,6 +2,7 @@
 
 import { ArrowRight, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import LiquidChrome from '../bits/liquid';
 
@@ -22,6 +23,26 @@ const ctaItems = [
 ];
 
 export default function CTA() {
+	const searchParams = useSearchParams();
+	
+	const getTrackingParams = () => {
+		if (typeof window === 'undefined') return '';
+		
+		const anonId = searchParams?.get('anonId') || 
+			(window as any).databuddy?.anonymousId || 
+			localStorage.getItem('did');
+		const sessionId = searchParams?.get('sessionId') || 
+			(window as any).databuddy?.sessionId || 
+			sessionStorage.getItem('did_session');
+		
+		const params = new URLSearchParams();
+		if (anonId) params.set('anonId', anonId);
+		if (sessionId) params.set('sessionId', sessionId);
+		return params.toString();
+	};
+
+	const trackingParams = getTrackingParams();
+
 	return (
 		<div className="-pr-2 relative mx-auto rounded-none border-border bg-background/95 font-geist md:w-10/12 md:border-[1.2px] md:border-b-0 md:border-l-0">
 			<div className="w-full md:mx-0">
@@ -32,18 +53,24 @@ export default function CTA() {
 						<Plus className="ml-auto h-8 w-8 translate-x-[16.5px] translate-y-[.5px] text-muted-foreground" />
 					</div>
 
-					{ctaItems.map((item) => (
-						<Link
-							className={cn(
-								'group flex transform-gpu flex-col justify-center border-border border-t-[1.2px] border-l-[1.2px] p-10 transition-colors hover:bg-muted/50 md:min-h-[240px] md:border-t-0'
-							)}
-							href={item.href}
-							key={item.title}
-							rel={
-								item.href.startsWith('http') ? 'noopener noreferrer' : undefined
-							}
-							target={item.href.startsWith('http') ? '_blank' : undefined}
-						>
+					{ctaItems.map((item) => {
+						const href =
+							item.href.startsWith('http') && trackingParams
+								? `${item.href}${item.href.includes('?') ? '&' : '?'}${trackingParams}`
+								: item.href;
+
+						return (
+							<Link
+								className={cn(
+									'group flex transform-gpu flex-col justify-center border-border border-t-[1.2px] border-l-[1.2px] p-10 transition-colors hover:bg-muted/50 md:min-h-[240px] md:border-t-0'
+								)}
+								href={href}
+								key={item.title}
+								rel={
+									item.href.startsWith('http') ? 'noopener noreferrer' : undefined
+								}
+								target={item.href.startsWith('http') ? '_blank' : undefined}
+							>
 							<div className="my-1 flex items-center gap-2">
 								{item.primary ? (
 									<div className="flex h-4 w-4 items-center justify-center rounded-sm bg-primary">
@@ -77,7 +104,8 @@ export default function CTA() {
 								</p>
 							</div>
 						</Link>
-					))}
+						);
+					})}
 				</div>
 
 				{/* Liquid Chrome CTA Section */}
@@ -118,7 +146,11 @@ export default function CTA() {
 									data-destination="register"
 									data-section="cta"
 									data-track="cta-get-started-click"
-									href="https://app.databuddy.cc/login"
+									href={
+										trackingParams
+											? `https://app.databuddy.cc/login?${trackingParams}`
+											: 'https://app.databuddy.cc/login'
+									}
 								>
 									Get started
 									<ArrowRight className="ml-2 h-4 w-4" />

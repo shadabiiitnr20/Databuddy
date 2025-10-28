@@ -9,18 +9,20 @@ import { LogoContent } from './logo';
 
 export function Footer() {
 	const handleGetStarted = () => {
-		const newWindow = window.open(
-			'https://app.databuddy.cc/login',
-			'_blank',
-			'noopener,noreferrer'
-		);
-		if (
-			!newWindow ||
-			newWindow.closed ||
-			typeof newWindow.closed === 'undefined'
-		) {
-			// Handle popup blocked case if needed
-		}
+		if (typeof window === 'undefined') return;
+		
+		const anonId = (window as any).databuddy?.anonymousId || localStorage.getItem('did');
+		const sessionId = (window as any).databuddy?.sessionId || sessionStorage.getItem('did_session');
+		
+		const params = new URLSearchParams();
+		if (anonId) params.set('anonId', anonId);
+		if (sessionId) params.set('sessionId', sessionId);
+		
+		const url = params.toString()
+			? `https://app.databuddy.cc/login?${params.toString()}`
+			: 'https://app.databuddy.cc/login';
+
+		window.open(url, '_blank', 'noopener,noreferrer');
 	};
 
 	return (
