@@ -3,6 +3,7 @@
 import { ArrowRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { getTrackingParams } from '@databuddy/sdk';
 import { cn } from '@/lib/utils';
 import LiquidChrome from '../bits/liquid';
 
@@ -24,24 +25,7 @@ const ctaItems = [
 
 export default function CTA() {
 	const searchParams = useSearchParams();
-	
-	const getTrackingParams = () => {
-		if (typeof window === 'undefined') return '';
-		
-		const anonId = searchParams?.get('anonId') || 
-			(window as any).databuddy?.anonymousId || 
-			localStorage.getItem('did');
-		const sessionId = searchParams?.get('sessionId') || 
-			(window as any).databuddy?.sessionId || 
-			sessionStorage.getItem('did_session');
-		
-		const params = new URLSearchParams();
-		if (anonId) params.set('anonId', anonId);
-		if (sessionId) params.set('sessionId', sessionId);
-		return params.toString();
-	};
-
-	const trackingParams = getTrackingParams();
+	const trackingParams = getTrackingParams(searchParams);
 
 	return (
 		<div className="-pr-2 relative mx-auto rounded-none border-border bg-background/95 font-geist md:w-10/12 md:border-[1.2px] md:border-b-0 md:border-l-0">

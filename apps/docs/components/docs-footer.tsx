@@ -3,21 +3,16 @@
 import Link from 'next/link';
 import { FaDiscord, FaGithub, FaXTwitter } from 'react-icons/fa6';
 import { IoMdMail } from 'react-icons/io';
+import { getTrackingParams } from '@databuddy/sdk';
 import { SciFiButton } from './landing/scifi-btn';
 
 export function DocsFooter() {
 	const handleGetStarted = () => {
 		if (typeof window === 'undefined') return;
 		
-		const anonId = (window as any).databuddy?.anonymousId || localStorage.getItem('did');
-		const sessionId = (window as any).databuddy?.sessionId || sessionStorage.getItem('did_session');
-		
-		const params = new URLSearchParams();
-		if (anonId) params.set('anonId', anonId);
-		if (sessionId) params.set('sessionId', sessionId);
-		
-		const url = params.toString()
-			? `https://app.databuddy.cc/login?${params.toString()}`
+		const trackingParams = getTrackingParams();
+		const url = trackingParams
+			? `https://app.databuddy.cc/login?${trackingParams}`
 			: 'https://app.databuddy.cc/login';
 
 		window.open(url, '_blank', 'noopener,noreferrer');

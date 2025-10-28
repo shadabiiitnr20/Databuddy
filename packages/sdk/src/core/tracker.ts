@@ -109,3 +109,41 @@ export function trackError(
 ): Promise<void> {
 	return track('error', { message, ...properties });
 }
+
+/**
+ * Get tracking IDs (anonymous ID and session ID) from multiple sources
+ * Priority: URL params > tracker instance > localStorage/sessionStorage
+ */
+export function getTrackingIds(urlParams?: URLSearchParams): {
+	anonId: string | null;
+	sessionId: string | null;
+} {
+	if (typeof window === 'undefined') {
+		return { anonId: null, sessionId: null };
+	}
+
+	const urlAnonId = urlParams?.get('anonId');
+	const urlSessionId = urlParams?.get('sessionId');
+
+	const trackerAnonId = window.databuddy?.anonymousId;
+	const trackerSessionId = window.databuddy?.sessionId;
+
+	const storageAnonId = localStorage.getItem('did');
+	const storageSessionId = sessionStorage.getItem('did_session');
+
+	return {
+		anonId: urlAnonId || trackerAnonId || storageAnonId || null,
+		sessionId: urlSessionId || trackerSessionId || storageSessionId || null,
+	};
+}
+
+/**
+ * Get tracking IDs as URL search params string
+ */
+export function getTrackingParams(urlParams?: URLSearchParams): string {
+	const { anonId, sessionId } = getTrackingIds(urlParams);
+	const params = new URLSearchParams();
+	if (anonId) params.set('anonId', anonId);
+	if (sessionId) params.set('sessionId', sessionId);
+	return params.toString();
+}
