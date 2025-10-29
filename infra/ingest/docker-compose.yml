@@ -35,10 +35,6 @@ services:
           --advertise-pandaproxy-addr internal://redpanda:8082 \
           --rpc-addr redpanda:33145 \
           --advertise-rpc-addr redpanda:33145 \
-          --overprovisioned \
-          --smp 2 \
-          --memory 2G \
-          --reserve-memory 0M \
           --default-log-level=$${REDPANDA_LOG_LEVEL:-warn} &
         REDPANDA_PID=$$!
         echo "Waiting for Redpanda to be ready..."

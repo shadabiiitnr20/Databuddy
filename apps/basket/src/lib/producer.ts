@@ -2,7 +2,7 @@ import { CompressionTypes, Kafka, type Producer } from 'kafkajs';
 import { Semaphore } from 'async-mutex';
 import { clickHouse, TABLE_NAMES } from '@databuddy/db';
 
-const BROKER = process.env.KAFKA_BROKERS as string;
+const BROKER = process.env.REDPANDA_BROKER as string;
 const SEMAPHORE_LIMIT = 15;
 const BUFFER_INTERVAL = 5000;
 const BUFFER_MAX = 1000;
@@ -59,33 +59,43 @@ let producer: Producer | null = null;
 let connected = false;
 let failed = false;
 let lastRetry = 0;
+const kafkaEnabled = Boolean(BROKER);
 
-if (BROKER) {
-	kafka = new Kafka({
-		clientId: 'basket',
-		brokers: [BROKER],
-		connectionTimeout: 5000,
-		requestTimeout: KAFKA_TIMEOUT,
-		sasl: {
-			mechanism: 'scram-sha-256',
-			username: process.env.KAFKA_USER as string,
-			password: process.env.KAFKA_PASSWORD as string,
-		},
-	});
-	producer = kafka.producer({
-		allowAutoTopicCreation: true,
-		retry: {
-			initialRetryTime: 300,
-			retries: 3,
-			maxRetryTime: 3000,
-		},
-		idempotent: true,
-		maxInFlightRequests: 5,
-	});
+if (kafkaEnabled) {
+	const username = process.env.REDPANDA_USER;
+	const password = process.env.REDPANDA_PASSWORD;
+	
+	if (!username || !password) {
+		console.warn('REDPANDA_BROKER is set but REDPANDA_USER or REDPANDA_PASSWORD is missing. Kafka disabled, using ClickHouse fallback only.');
+	} else {
+		kafka = new Kafka({
+			clientId: 'basket',
+			brokers: [BROKER],
+			connectionTimeout: 5000,
+			requestTimeout: KAFKA_TIMEOUT,
+			sasl: {
+				mechanism: 'scram-sha-256',
+				username,
+				password,
+			},
+		});
+		producer = kafka.producer({
+			allowAutoTopicCreation: true,
+			retry: {
+				initialRetryTime: 300,
+				retries: 3,
+				maxRetryTime: 3000,
+			},
+			idempotent: true,
+			maxInFlightRequests: 5,
+		});
+	}
+} else {
+	console.log('REDPANDA_BROKER not set, using ClickHouse fallback only.');
 }
 
 async function connect() {
-	if (!BROKER || !producer || connected) return connected;
+	if (!kafkaEnabled || !producer || connected) return connected;
 	if (failed && Date.now() - lastRetry < RECONNECT_COOLDOWN) return false;
 
 	try {
@@ -229,7 +239,7 @@ async function send(topic: string, event: any, key?: string) {
 	const [, release] = await semaphore.acquire();
 
 	try {
-		if ((await connect()) && producer && connected) {
+		if (kafkaEnabled && (await connect()) && producer && connected) {
 			try {
 				await producer.send({
 					topic,
@@ -279,7 +289,7 @@ export const sendEventBatch = async (topic: string, events: any[]) => {
 	const [, release] = await semaphore.acquire();
 
 	try {
-		if ((await connect()) && producer && connected) {
+		if (kafkaEnabled && (await connect()) && producer && connected) {
 			try {
 				await producer.send({
 					topic,
@@ -357,7 +367,7 @@ export const disconnectProducer = async () => {
 	});
 };
 
-export const getProducerStats = () => ({ ...stats, bufferSize: buffer.length, connected, failed });
+export const getProducerStats = () => ({ ...stats, bufferSize: buffer.length, connected, failed, kafkaEnabled });
 
 if (process.env.NODE_ENV === 'development') {
 	setInterval(() => {
