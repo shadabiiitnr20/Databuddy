@@ -66,7 +66,7 @@ if (kafkaEnabled) {
 	const password = process.env.REDPANDA_PASSWORD;
 	
 	if (!username || !password) {
-		console.warn('REDPANDA_BROKER is set but REDPANDA_USER or REDPANDA_PASSWORD is missing. Kafka disabled, using ClickHouse fallback only.');
+		// REDPANDA_BROKER is set but credentials are missing - Kafka disabled, using ClickHouse fallback
 	} else {
 		kafka = new Kafka({
 			clientId: 'basket',
@@ -90,8 +90,6 @@ if (kafkaEnabled) {
 			maxInFlightRequests: 5,
 		});
 	}
-} else {
-	console.log('REDPANDA_BROKER not set, using ClickHouse fallback only.');
 }
 
 async function connect() {
@@ -103,7 +101,6 @@ async function connect() {
 		connected = true;
 		failed = false;
 		lastRetry = 0;
-		console.log('Kafka connected');
 		return true;
 	} catch (err) {
 		failed = true;
@@ -146,10 +143,6 @@ async function flush() {
 					}
 
 					stats.flushed += events.length;
-
-					if (process.env.NODE_ENV === 'development') {
-						console.log(`Flushed ${events.length} to ${table} (${chunksFlushed} chunks)`);
-					}
 				} catch (err) {
 					clearTimeout(timeout);
 					stats.errors++;
@@ -326,11 +319,6 @@ export const disconnectProducer = async () => {
 	if (shuttingDown) return;
 	shuttingDown = true;
 
-	console.log('Shutting down producer...', {
-		bufferSize: buffer.length,
-		inFlight: SEMAPHORE_LIMIT - semaphore.getValue(),
-	});
-
 	let checks = 0;
 	while (semaphore.getValue() < SEMAPHORE_LIMIT && checks++ < 50) {
 		await new Promise(r => setTimeout(r, 100));
@@ -340,7 +328,6 @@ export const disconnectProducer = async () => {
 
 	let finalFlushAttempts = 0;
 	while (buffer.length > 0 && finalFlushAttempts++ < 3 && !flushing) {
-		console.log(`Final flush attempt ${finalFlushAttempts}, ${buffer.length} events remaining`);
 		await flush();
 		await new Promise(r => setTimeout(r, 1000));
 	}
@@ -355,28 +342,13 @@ export const disconnectProducer = async () => {
 		try {
 			await producer.disconnect();
 			connected = false;
-			console.log('Kafka producer disconnected');
 		} catch (err) {
 			console.error('Error disconnecting Kafka producer:', err);
 		}
 	}
-
-	console.log('Producer shutdown complete', {
-		stats,
-		remainingBuffer: buffer.length,
-	});
 };
 
 export const getProducerStats = () => ({ ...stats, bufferSize: buffer.length, connected, failed, kafkaEnabled });
-
-if (process.env.NODE_ENV === 'development') {
-	setInterval(() => {
-		const metrics = getProducerStats();
-		if (metrics.kafkaSent > 0 || metrics.buffered > 0 || metrics.errors > 0) {
-			console.log('Producer metrics:', metrics);
-		}
-	}, 30000);
-}
 
 process.on('SIGTERM', () => disconnectProducer().catch(console.error));
 process.on('SIGINT', () => disconnectProducer().catch(console.error));

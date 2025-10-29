@@ -328,7 +328,6 @@ const app = new Elysia()
 		try {
 			const validation = await validateRequest(body, query, request);
 			if ('error' in validation) {
-				console.error('Request validation failed:', validation.error);
 				return validation.error;
 			}
 
