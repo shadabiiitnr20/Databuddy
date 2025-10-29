@@ -45,8 +45,10 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    volumes:
+      - ./console-config.yml:/tmp/console-config.yml:ro
     environment:
-      KAFKA_BROKERS: redpanda:9092
+      CONFIG_FILEPATH: /tmp/console-config.yml
     networks:
       - databuddy
     depends_on:
