@@ -14,7 +14,7 @@ import { CountryFlag } from './icons/CountryFlag';
 const MapContainer = dynamic(
 	() => import('react-leaflet').then((mod) => mod.MapContainer),
 	{ ssr: false }
-);
+)
 const GeoJSON = dynamic(
 	() => import('react-leaflet').then((mod) => mod.GeoJSON),
 	{ ssr: false }
