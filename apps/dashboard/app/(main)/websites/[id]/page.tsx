@@ -32,28 +32,28 @@ const WebsiteOverviewTab = dynamic(
 		import('./_components/tabs/overview-tab').then((mod) => ({
 			default: mod.WebsiteOverviewTab,
 		})),
-	{ loading: () => <TabLoadingSkeleton />, ssr: false }
+	{ ssr: false }
 );
 const WebsiteAudienceTab = dynamic(
 	() =>
 		import('./_components/tabs/audience-tab').then((mod) => ({
 			default: mod.WebsiteAudienceTab,
 		})),
-	{ loading: () => <TabLoadingSkeleton />, ssr: false }
+	{ ssr: false }
 );
 const WebsitePerformanceTab = dynamic(
 	() =>
 		import('./_components/tabs/performance-tab').then((mod) => ({
 			default: mod.WebsitePerformanceTab,
 		})),
-	{ loading: () => <TabLoadingSkeleton />, ssr: false }
+	{ ssr: false }
 );
 const WebsiteTrackingSetupTab = dynamic(
 	() =>
 		import('./_components/tabs/tracking-setup-tab').then((mod) => ({
 			default: mod.WebsiteTrackingSetupTab,
 		})),
-	{ loading: () => <TabLoadingSkeleton />, ssr: false }
+	{ ssr: false }
 );
 
 type TabDefinition = {
@@ -129,20 +129,109 @@ function WebsiteDetailsPage() {
 				}
 			};
 
-			return (
-				<Suspense fallback={<TabLoadingSkeleton />} key={key}>
-					{getTabComponent()}
-				</Suspense>
-			);
+			return getTabComponent();
 		},
 		[activeTab, id, dateRange, data, isRefreshing, selectedFilters, addFilter]
 	);
 
 	if (isLoading || isTrackingSetup === null) {
-		return <TabLoadingSkeleton />;
+		return (
+			<div className="select-none space-y-6 p-6">
+				<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+					{[1, 2, 3, 4, 5, 6].map((num) => (
+						<div
+							className="rounded border border-sidebar-border bg-sidebar p-4"
+							key={`metric-skeleton-${num}`}
+						>
+							<div className="space-y-2">
+								<Skeleton className="h-4 w-20" />
+								<Skeleton className="h-8 w-16" />
+								<Skeleton className="h-3 w-16" />
+							</div>
+						</div>
+					))}
+				</div>
+				<div className="rounded border border-sidebar-border bg-sidebar shadow-sm">
+					<div className="flex flex-col items-start justify-between gap-3 border-b border-sidebar-border p-4 sm:flex-row">
+						<div className="space-y-2">
+							<Skeleton className="h-5 w-32" />
+							<Skeleton className="h-4 w-48" />
+						</div>
+						<div className="flex gap-2">
+							<Skeleton className="h-8 w-20" />
+							<Skeleton className="h-8 w-20" />
+							<Skeleton className="h-8 w-20" />
+						</div>
+					</div>
+					<div className="p-4">
+						<Skeleton className="h-80 w-full" />
+					</div>
+				</div>
+				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+					{[1, 2].map((tableNum) => (
+						<div
+							className="rounded border border-sidebar-border bg-sidebar"
+							key={`table-skeleton-${tableNum}`}
+						>
+							<div className="border-b border-sidebar-border p-4">
+								<Skeleton className="h-5 w-24" />
+								<Skeleton className="mt-1 h-4 w-32" />
+							</div>
+							<div className="space-y-3 p-4">
+								{[1, 2, 3, 4, 5].map((rowNum) => (
+									<div
+										className="flex items-center justify-between"
+										key={`row-skeleton-${rowNum}`}
+									>
+										<div className="flex items-center gap-3">
+											<Skeleton className="h-4 w-4" />
+											<Skeleton className="h-4 w-32" />
+										</div>
+										<div className="flex items-center gap-4">
+											<Skeleton className="h-4 w-12" />
+											<Skeleton className="h-5 w-10 rounded-full" />
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					))}
+				</div>
+				<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+					{[1, 2, 3].map((techNum) => (
+						<div
+							className="rounded border border-sidebar-border bg-sidebar"
+							key={`tech-skeleton-${techNum}`}
+						>
+							<div className="border-b border-sidebar-border p-4">
+								<Skeleton className="h-5 w-20" />
+								<Skeleton className="mt-1 h-4 w-28" />
+							</div>
+							<div className="space-y-3 p-4">
+								{[1, 2, 3, 4].map((rowNum) => (
+									<div
+										className="flex items-center justify-between"
+										key={`tech-row-skeleton-${rowNum}`}
+									>
+										<div className="flex items-center gap-3">
+											<Skeleton className="h-6 w-6" />
+											<Skeleton className="h-4 w-24" />
+										</div>
+										<div className="flex items-center gap-3">
+											<Skeleton className="h-4 w-8" />
+											<Skeleton className="h-5 w-12 rounded-full" />
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
+		);
 	}
 
-	if (isError || !data) {
+	if (isError || (!isLoading && !data)) {
 		return (
 			<div className="select-none py-8">
 				<EmptyState
@@ -210,135 +299,7 @@ function WebsiteDetailsPage() {
 	);
 }
 
-function TabLoadingSkeleton() {
-	return (
-		<div className="select-none space-y-6">
-			{/* Key metrics cards skeleton */}
-			<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-				{[1, 2, 3, 4, 5, 6].map((num) => (
-					<div
-						className="rounded-lg border bg-background p-4"
-						key={`metric-skeleton-${num}`}
-					>
-						<div className="space-y-2">
-							<Skeleton className="h-4 w-20" />
-							<Skeleton className="h-8 w-16" />
-							<Skeleton className="h-3 w-16" />
-						</div>
-					</div>
-				))}
-			</div>
-
-			{/* Chart skeleton */}
-			<div className="rounded border shadow-sm">
-				<div className="flex flex-col items-start justify-between gap-3 border-b p-4 sm:flex-row">
-					<div className="space-y-2">
-						<Skeleton className="h-5 w-32" />
-						<Skeleton className="h-4 w-48" />
-					</div>
-					<div className="flex gap-2">
-						<Skeleton className="h-8 w-20" />
-						<Skeleton className="h-8 w-20" />
-						<Skeleton className="h-8 w-20" />
-					</div>
-				</div>
-				<div className="p-4">
-					<Skeleton className="h-80 w-full" />
-				</div>
-			</div>
-
-			{/* Data tables skeleton */}
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-				{[1, 2].map((tableNum) => (
-					<div
-						className="rounded-lg border bg-background"
-						key={`table-skeleton-${tableNum}`}
-					>
-						<div className="border-b p-4">
-							<Skeleton className="h-5 w-24" />
-							<Skeleton className="mt-1 h-4 w-32" />
-						</div>
-						<div className="space-y-3 p-4">
-							{[1, 2, 3, 4, 5].map((rowNum) => (
-								<div
-									className="flex items-center justify-between"
-									key={`row-skeleton-${rowNum}`}
-								>
-									<div className="flex items-center gap-3">
-										<Skeleton className="h-4 w-4" />
-										<Skeleton className="h-4 w-32" />
-									</div>
-									<div className="flex items-center gap-4">
-										<Skeleton className="h-4 w-12" />
-										<Skeleton className="h-5 w-10 rounded-full" />
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
-				))}
-			</div>
-
-			{/* Technology breakdown skeleton */}
-			<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-				{[1, 2, 3].map((techNum) => (
-					<div
-						className="rounded-lg border bg-background"
-						key={`tech-skeleton-${techNum}`}
-					>
-						<div className="border-b p-4">
-							<Skeleton className="h-5 w-20" />
-							<Skeleton className="mt-1 h-4 w-28" />
-						</div>
-						<div className="space-y-3 p-4">
-							{[1, 2, 3, 4].map((rowNum) => (
-								<div
-									className="flex items-center justify-between"
-									key={`tech-row-skeleton-${rowNum}`}
-								>
-									<div className="flex items-center gap-3">
-										<Skeleton className="h-6 w-6" />
-										<Skeleton className="h-4 w-24" />
-									</div>
-									<div className="flex items-center gap-3">
-										<Skeleton className="h-4 w-8" />
-										<Skeleton className="h-5 w-12 rounded-full" />
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
-				))}
-			</div>
-		</div>
-	);
-}
 
 export default function Page() {
-	return (
-		<Suspense fallback={<PageLoadingSkeleton />}>
-			<WebsiteDetailsPage />
-		</Suspense>
-	);
-}
-
-function PageLoadingSkeleton() {
-	return (
-		<div className="select-none p-6">
-			<header className="border-b pb-3">
-				<div className="flex items-center justify-between">
-					<div className="space-y-2">
-						<Skeleton className="h-8 w-48" />
-						<Skeleton className="h-4 w-64" />
-					</div>
-					<Skeleton className="h-8 w-32" />
-				</div>
-			</header>
-
-			<div className="mt-4 space-y-4">
-				<Skeleton className="h-10 w-full" />
-				<Skeleton className="h-64 w-full" />
-			</div>
-		</div>
-	);
+	return <WebsiteDetailsPage />;
 }

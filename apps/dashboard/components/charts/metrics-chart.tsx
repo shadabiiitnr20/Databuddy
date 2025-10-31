@@ -1,5 +1,6 @@
 import { ChartLineIcon, EyeIcon, EyeSlashIcon, XIcon } from '@phosphor-icons/react';
 import { useAtom } from 'jotai';
+import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import {
 	Area,
@@ -216,9 +217,12 @@ export function MetricsChart({
 		const startDateStr = (chartData[startIndex] as any).rawDate || chartData[startIndex].date;
 		const endDateStr = (chartData[endIndex] as any).rawDate || chartData[endIndex].date;
 		
+		const startDate = dayjs(startDateStr).toDate();
+		const endDate = dayjs(endDateStr).toDate();
+		
 		const dateRange = { 
-			startDate: new Date(startDateStr), 
-			endDate: new Date(endDateStr) 
+			startDate,
+			endDate
 		};
 
 		setSelectedDateRange(dateRange);
