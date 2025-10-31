@@ -228,7 +228,6 @@ export const goalsRouter = createTRPCRouter({
 				key: cacheKey,
 				ttl: ANALYTICS_CACHE_TTL,
 				tables: ['goals'],
-				disabled: true,
 				queryFn: async () => {
 					await authorizeWebsiteAccess(ctx, input.websiteId, 'read');
 					const goal = await ctx.db
@@ -304,7 +303,6 @@ export const goalsRouter = createTRPCRouter({
 				key: cacheKey,
 				ttl: ANALYTICS_CACHE_TTL,
 				tables: ['goals'],
-				disabled: true,
 				queryFn: async () => {
 					await authorizeWebsiteAccess(ctx, input.websiteId, 'read');
 					const goalsList = await ctx.db

@@ -603,7 +603,7 @@ export const processFunnelAnalytics = async (
 		WITH all_step_events AS (
 			${stepQueries.join('\n			UNION ALL\n')}
 		)
-		SELECT 
+		SELECT DISTINCT
 			step_number,
 			step_name,
 			session_id,
@@ -859,7 +859,7 @@ export const processFunnelAnalyticsByReferrer = async (
 		WITH all_step_events AS (
 			${stepQueries.join('\n			UNION ALL\n')}
 		)
-		SELECT 
+		SELECT DISTINCT
 			step_number,
 			step_name,
 			session_id,
