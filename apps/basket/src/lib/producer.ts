@@ -482,37 +482,12 @@ export const getProducerStats = () => {
 	return getDefaultProducer().getStats();
 };
 
-async function gracefulShutdown(): Promise<void> {
-	console.log('Received shutdown signal, cleaning up...');
-	
-	const timeout = setTimeout(() => {
-		console.warn('Shutdown timeout, forcing exit...');
-		process.exit(1);
-	}, 10000);
+process.on('SIGTERM', async () => {
+	await disconnectProducer().catch(console.error);
+	process.exit(0);
+});
 
-	try {
-		await disconnectProducer();
-		clearTimeout(timeout);
-		console.log('Cleanup complete');
-	} catch (err) {
-		clearTimeout(timeout);
-		console.error('Error during shutdown:', err);
-	} finally {
-		process.exit(0);
-	}
-}
-
-let isShuttingDown = false;
-
-const handleShutdown = (signal: string) => {
-	if (isShuttingDown) {
-		console.log(`Received ${signal} again, forcing exit...`);
-		process.exit(1);
-		return;
-	}
-	isShuttingDown = true;
-	gracefulShutdown().catch(() => process.exit(1));
-};
-
-process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-process.on('SIGINT', () => handleShutdown('SIGINT'));
+process.on('SIGINT', async () => {
+	await disconnectProducer().catch(console.error);
+	process.exit(0);
+});

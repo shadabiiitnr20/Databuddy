@@ -30,6 +30,14 @@ import {
 	validatePerformanceMetric,
 	validateSessionId,
 } from '../utils/validation';
+import {
+	createBotDetectedResponse,
+	createSchemaErrorResponse,
+	parseEventId,
+	parseProperties,
+	parseTimestamp,
+	validateEventSchema,
+} from '../utils/parsing-helpers';
 import type {
 	AnalyticsEvent,
 	CustomEvent,
@@ -44,15 +52,7 @@ async function processTrackEventData(
 	userAgent: string,
 	ip: string
 ): Promise<AnalyticsEvent> {
-	let eventId = sanitizeString(
-		trackData.eventId,
-		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
-	);
-
-	if (!eventId) {
-		eventId = randomUUID();
-	}
-
+	const eventId = parseEventId(trackData.eventId, randomUUID);
 	const { anonymizedIP, country, region, city } = await getGeo(ip);
 	const {
 		browserName,
@@ -64,6 +64,8 @@ async function processTrackEventData(
 		deviceModel,
 	} = parseUserAgent(userAgent);
 	const now = Date.now();
+	const timestamp = parseTimestamp(trackData.timestamp);
+	const sessionStartTime = parseTimestamp(trackData.sessionStartTime);
 
 	return {
 		id: randomUUID(),
@@ -76,16 +78,12 @@ async function processTrackEventData(
 			trackData.anonymousId,
 			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 		),
-		time: typeof trackData.timestamp === 'number' ? trackData.timestamp : now,
+		time: timestamp,
 		session_id: validateSessionId(trackData.sessionId),
 		event_type: 'track',
 		event_id: eventId,
-		session_start_time:
-			typeof trackData.sessionStartTime === 'number'
-				? trackData.sessionStartTime
-				: now,
-		timestamp:
-			typeof trackData.timestamp === 'number' ? trackData.timestamp : now,
+		session_start_time: sessionStartTime,
+		timestamp,
 		referrer: sanitizeString(
 			trackData.referrer,
 			VALIDATION_LIMITS.STRING_MAX_LENGTH
@@ -129,9 +127,7 @@ async function processTrackEventData(
 		render_time: validatePerformanceMetric(trackData.render_time),
 		redirect_time: validatePerformanceMetric(trackData.redirect_time),
 		domain_lookup_time: validatePerformanceMetric(trackData.domain_lookup_time),
-		properties: trackData.properties
-			? JSON.stringify(trackData.properties)
-			: '{}',
+		properties: parseProperties(trackData.properties),
 		created_at: now,
 	};
 }
@@ -142,17 +138,10 @@ async function processErrorEventData(
 	userAgent: string,
 	ip: string
 ): Promise<ErrorEvent> {
-	let eventId = sanitizeString(
-		errorData.payload.eventId,
-		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
-	);
-
-	if (!eventId) {
-		eventId = randomUUID();
-	}
-
 	const payload = errorData.payload;
+	const eventId = parseEventId(payload.eventId, randomUUID);
 	const now = Date.now();
+	const timestamp = parseTimestamp(payload.timestamp);
 
 	const { anonymizedIP, country, region } = await getGeo(ip);
 	const { browserName, browserVersion, osName, osVersion, deviceType } =
@@ -167,7 +156,7 @@ async function processErrorEventData(
 			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 		),
 		session_id: validateSessionId(payload.sessionId),
-		timestamp: typeof payload.timestamp === 'number' ? payload.timestamp : now,
+		timestamp,
 		path: sanitizeString(payload.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
 		message: sanitizeString(
 			payload.message,
@@ -203,17 +192,10 @@ async function processWebVitalsEventData(
 	userAgent: string,
 	ip: string
 ): Promise<WebVitalsEvent> {
-	let eventId = sanitizeString(
-		vitalsData.payload.eventId,
-		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
-	);
-
-	if (!eventId) {
-		eventId = randomUUID();
-	}
-
 	const payload = vitalsData.payload;
+	const eventId = parseEventId(payload.eventId, randomUUID);
 	const now = Date.now();
+	const timestamp = parseTimestamp(payload.timestamp);
 
 	const { country, region } = await getGeo(ip);
 	const { browserName, browserVersion, osName, osVersion, deviceType } =
@@ -228,7 +210,7 @@ async function processWebVitalsEventData(
 			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 		),
 		session_id: validateSessionId(payload.sessionId),
-		timestamp: typeof payload.timestamp === 'number' ? payload.timestamp : now,
+		timestamp,
 		path: sanitizeString(payload.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
 		fcp: validatePerformanceMetric(payload.fcp),
 		lcp: validatePerformanceMetric(payload.lcp),
@@ -252,16 +234,8 @@ async function processCustomEventData(
 	customData: any,
 	clientId: string
 ): Promise<CustomEvent> {
-	let eventId = sanitizeString(
-		customData.eventId,
-		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
-	);
-
-	if (!eventId) {
-		eventId = randomUUID();
-	}
-
-	const now = Date.now();
+	const eventId = parseEventId(customData.eventId, randomUUID);
+	const timestamp = parseTimestamp(customData.timestamp);
 
 	return {
 		id: randomUUID(),
@@ -275,11 +249,8 @@ async function processCustomEventData(
 			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 		),
 		session_id: validateSessionId(customData.sessionId),
-		properties: customData.properties
-			? JSON.stringify(customData.properties)
-			: '{}',
-		timestamp:
-			typeof customData.timestamp === 'number' ? customData.timestamp : now,
+		properties: parseProperties(customData.properties),
+		timestamp,
 	};
 }
 
@@ -287,16 +258,8 @@ async function processOutgoingLinkData(
 	linkData: any,
 	clientId: string
 ): Promise<CustomOutgoingLink> {
-	let eventId = sanitizeString(
-		linkData.eventId,
-		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
-	);
-
-	if (!eventId) {
-		eventId = randomUUID();
-	}
-
-	const now = Date.now();
+	const eventId = parseEventId(linkData.eventId, randomUUID);
+	const timestamp = parseTimestamp(linkData.timestamp);
 
 	return {
 		id: randomUUID(),
@@ -308,11 +271,8 @@ async function processOutgoingLinkData(
 		session_id: validateSessionId(linkData.sessionId),
 		href: sanitizeString(linkData.href, VALIDATION_LIMITS.PATH_MAX_LENGTH),
 		text: sanitizeString(linkData.text, VALIDATION_LIMITS.TEXT_MAX_LENGTH),
-		properties: linkData.properties
-			? JSON.stringify(linkData.properties)
-			: '{}',
-		timestamp:
-			typeof linkData.timestamp === 'number' ? linkData.timestamp : now,
+		properties: parseProperties(linkData.properties),
+		timestamp,
 	};
 }
 
@@ -352,28 +312,18 @@ const app = new Elysia()
 					return botError.error;
 				}
 
-				let parseResult;
-				if (process.env.NODE_ENV === 'development') {
-					parseResult = { success: true, data: body };
-				} else {
-					parseResult = analyticsEventSchema.safeParse(body);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							body,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							errors: parseResult.error.issues,
-						};
-					}
+				const parseResult = await validateEventSchema(
+					analyticsEventSchema,
+					body,
+					request,
+					query,
+					clientId
+				);
+				
+				if (!parseResult.success) {
+					return createSchemaErrorResponse(parseResult.error.issues);
 				}
+
 				insertTrackEvent(body, clientId, userAgent, ip);
 				return { status: 'success', type: 'track' };
 			}
@@ -398,28 +348,18 @@ const app = new Elysia()
 					return botError.error;
 				}
 
-				let parseResult;
-				if (process.env.NODE_ENV === 'development') {
-					parseResult = { success: true, data: body };
-				} else {
-					parseResult = errorEventSchema.safeParse(body);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							body,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							errors: parseResult.error.issues,
-						};
-					}
+				const parseResult = await validateEventSchema(
+					errorEventSchema,
+					body,
+					request,
+					query,
+					clientId
+				);
+				
+				if (!parseResult.success) {
+					return createSchemaErrorResponse(parseResult.error.issues);
 				}
+
 				insertError(body, clientId, userAgent, ip);
 				return { status: 'success', type: 'error' };
 			}
@@ -436,54 +376,33 @@ const app = new Elysia()
 					return botError.error;
 				}
 
-				let parseResult;
-				if (process.env.NODE_ENV === 'development') {
-					parseResult = { success: true, data: body };
-				} else {
-					parseResult = webVitalsEventSchema.safeParse(body);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							body,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							errors: parseResult.error.issues,
-						};
-					}
+				const parseResult = await validateEventSchema(
+					webVitalsEventSchema,
+					body,
+					request,
+					query,
+					clientId
+				);
+				
+				if (!parseResult.success) {
+					return createSchemaErrorResponse(parseResult.error.issues);
 				}
+
 				insertWebVitals(body, clientId, userAgent, ip);
 				return { status: 'success', type: 'web_vitals' };
 			}
 
 			if (eventType === 'custom') {
-				let parseResult;
-				if (process.env.NODE_ENV === 'development') {
-					parseResult = { success: true, data: body };
-				} else {
-					parseResult = customEventSchema.safeParse(body);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							body,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							errors: parseResult.error.issues,
-						};
-					}
+				const parseResult = await validateEventSchema(
+					customEventSchema,
+					body,
+					request,
+					query,
+					clientId
+				);
+				
+				if (!parseResult.success) {
+					return createSchemaErrorResponse(parseResult.error.issues);
 				}
 
 				const eventId = body.eventId || randomUUID();
@@ -505,28 +424,18 @@ const app = new Elysia()
 					return botError.error;
 				}
 
-				let parseResult;
-				if (process.env.NODE_ENV === 'development') {
-					parseResult = { success: true, data: body };
-				} else {
-					parseResult = outgoingLinkSchema.safeParse(body);
-					if (!parseResult.success) {
-						await logBlockedTraffic(
-							request,
-							body,
-							query,
-							'invalid_schema',
-							'Schema Validation',
-							undefined,
-							clientId
-						);
-						return {
-							status: 'error',
-							message: 'Invalid event schema',
-							errors: parseResult.error.issues,
-						};
-					}
+				const parseResult = await validateEventSchema(
+					outgoingLinkSchema,
+					body,
+					request,
+					query,
+					clientId
+				);
+				
+				if (!parseResult.success) {
+					return createSchemaErrorResponse(parseResult.error.issues);
 				}
+
 				insertOutgoingLink(body, clientId, userAgent, ip);
 				return { status: 'success', type: 'outgoing_link' };
 			}
@@ -591,36 +500,25 @@ const app = new Elysia()
 							userAgent
 						);
 						if (botError) {
-							results.push({
-								status: 'error',
-								message: 'Bot detected',
-								eventType,
-								error: 'ignored',
-							});
+							results.push(createBotDetectedResponse(eventType));
 							continue;
 						}
 
-						if (process.env.NODE_ENV !== 'development') {
-							const parseResult = analyticsEventSchema.safeParse(event);
-							if (!parseResult.success) {
-								await logBlockedTraffic(
-									request,
-									event,
-									query,
-									'invalid_schema',
-									'Schema Validation',
-									undefined,
-									clientId
-								);
-								results.push({
-									status: 'error',
-									message: 'Invalid event schema',
-									eventType,
-									errors: parseResult.error.issues,
-									eventId: event.eventId,
-								});
-								continue;
-							}
+						const parseResult = await validateEventSchema(
+							analyticsEventSchema,
+							event,
+							request,
+							query,
+							clientId
+						);
+						
+						if (!parseResult.success) {
+							results.push({
+								...createSchemaErrorResponse(parseResult.error.issues),
+								eventType,
+								eventId: event.eventId,
+							});
+							continue;
 						}
 
 						const trackEvent = await processTrackEventData(
@@ -653,36 +551,25 @@ const app = new Elysia()
 							userAgent
 						);
 						if (botError) {
-							results.push({
-								status: 'error',
-								message: 'Bot detected',
-								eventType,
-								error: 'ignored',
-							});
+							results.push(createBotDetectedResponse(eventType));
 							continue;
 						}
 
-						if (process.env.NODE_ENV !== 'development') {
-							const parseResult = errorEventSchema.safeParse(event);
-							if (!parseResult.success) {
-								await logBlockedTraffic(
-									request,
-									event,
-									query,
-									'invalid_schema',
-									'Schema Validation',
-									undefined,
-									clientId
-								);
-								results.push({
-									status: 'error',
-									message: 'Invalid event schema',
-									eventType,
-									errors: parseResult.error.issues,
-									eventId: event.payload?.eventId,
-								});
-								continue;
-							}
+						const parseResult = await validateEventSchema(
+							errorEventSchema,
+							event,
+							request,
+							query,
+							clientId
+						);
+						
+						if (!parseResult.success) {
+							results.push({
+								...createSchemaErrorResponse(parseResult.error.issues),
+								eventType,
+								eventId: event.payload?.eventId,
+							});
+							continue;
 						}
 
 						const errorEvent = await processErrorEventData(
@@ -706,36 +593,25 @@ const app = new Elysia()
 							userAgent
 						);
 						if (botError) {
-							results.push({
-								status: 'error',
-								message: 'Bot detected',
-								eventType,
-								error: 'ignored',
-							});
+							results.push(createBotDetectedResponse(eventType));
 							continue;
 						}
 
-						if (process.env.NODE_ENV !== 'development') {
-							const parseResult = webVitalsEventSchema.safeParse(event);
-							if (!parseResult.success) {
-								await logBlockedTraffic(
-									request,
-									event,
-									query,
-									'invalid_schema',
-									'Schema Validation',
-									undefined,
-									clientId
-								);
-								results.push({
-									status: 'error',
-									message: 'Invalid event schema',
-									eventType,
-									errors: parseResult.error.issues,
-									eventId: event.payload?.eventId,
-								});
-								continue;
-							}
+						const parseResult = await validateEventSchema(
+							webVitalsEventSchema,
+							event,
+							request,
+							query,
+							clientId
+						);
+						
+						if (!parseResult.success) {
+							results.push({
+								...createSchemaErrorResponse(parseResult.error.issues),
+								eventType,
+								eventId: event.payload?.eventId,
+							});
+							continue;
 						}
 
 						const vitalsEvent = await processWebVitalsEventData(
@@ -751,27 +627,21 @@ const app = new Elysia()
 							eventId: event.payload?.eventId,
 						});
 					} else if (eventType === 'custom') {
-						if (process.env.NODE_ENV !== 'development') {
-							const parseResult = customEventSchema.safeParse(event);
-							if (!parseResult.success) {
-								await logBlockedTraffic(
-									request,
-									event,
-									query,
-									'invalid_schema',
-									'Schema Validation',
-									undefined,
-									clientId
-								);
-								results.push({
-									status: 'error',
-									message: 'Invalid event schema',
-									eventType,
-									errors: parseResult.error.issues,
-									eventId: event.eventId,
-								});
-								continue;
-							}
+						const parseResult = await validateEventSchema(
+							customEventSchema,
+							event,
+							request,
+							query,
+							clientId
+						);
+						
+						if (!parseResult.success) {
+							results.push({
+								...createSchemaErrorResponse(parseResult.error.issues),
+								eventType,
+								eventId: event.eventId,
+							});
+							continue;
 						}
 
 						const customEvent = await processCustomEventData(event, clientId);
@@ -790,36 +660,25 @@ const app = new Elysia()
 							userAgent
 						);
 						if (botError) {
-							results.push({
-								status: 'error',
-								message: 'Bot detected',
-								eventType,
-								error: 'ignored',
-							});
+							results.push(createBotDetectedResponse(eventType));
 							continue;
 						}
 
-						if (process.env.NODE_ENV !== 'development') {
-							const parseResult = outgoingLinkSchema.safeParse(event);
-							if (!parseResult.success) {
-								await logBlockedTraffic(
-									request,
-									event,
-									query,
-									'invalid_schema',
-									'Schema Validation',
-									undefined,
-									clientId
-								);
-								results.push({
-									status: 'error',
-									message: 'Invalid event schema',
-									eventType,
-									errors: parseResult.error.issues,
-									eventId: event.eventId,
-								});
-								continue;
-							}
+						const parseResult = await validateEventSchema(
+							outgoingLinkSchema,
+							event,
+							request,
+							query,
+							clientId
+						);
+						
+						if (!parseResult.success) {
+							results.push({
+								...createSchemaErrorResponse(parseResult.error.issues),
+								eventType,
+								eventId: event.eventId,
+							});
+							continue;
 						}
 
 						const linkEvent = await processOutgoingLinkData(event, clientId);
