@@ -11,6 +11,9 @@
     "test": "bun test",
     "vscode:prepublish": "bun run build"
   },
+  "dependencies": {
+    "jotai": ">=2.12.5"
+  },
   "devDependencies": {
     "@ai-sdk/provider": "^2.0.0",
     "@types/node": "^20.0.0",
