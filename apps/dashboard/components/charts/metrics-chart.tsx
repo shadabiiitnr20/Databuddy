@@ -322,6 +322,7 @@ export function MetricsChart({
 						annotations={annotations}
 						onEdit={onEditAnnotation || (() => {})}
 						onDelete={onDeleteAnnotation || (async () => {})}
+						granularity={granularity}
 					/>
 				</div>
 			)}

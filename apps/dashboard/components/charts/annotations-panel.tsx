@@ -37,6 +37,7 @@ interface AnnotationsPanelProps {
 	onEdit: (annotation: Annotation) => void;
 	onDelete: (id: string) => Promise<void>;
 	isDeleting?: boolean;
+	granularity?: 'hourly' | 'daily' | 'weekly' | 'monthly';
 }
 
 export function AnnotationsPanel({
@@ -44,6 +45,7 @@ export function AnnotationsPanel({
 	onEdit,
 	onDelete,
 	isDeleting = false,
+	granularity = 'daily',
 }: AnnotationsPanelProps) {
 	const [deleteId, setDeleteId] = useState<string | null>(null);
 	const [isOpen, setIsOpen] = useState(false);
@@ -115,7 +117,11 @@ export function AnnotationsPanel({
 													style={{ backgroundColor: annotation.color }}
 												/>
 												<span className="text-xs text-sidebar-foreground/70">
-													{formatAnnotationDateRange(annotation.xValue, annotation.xEndValue)}
+													{formatAnnotationDateRange(
+														annotation.xValue,
+														annotation.xEndValue,
+														granularity
+													)}
 												</span>
 												{annotation.annotationType === 'range' &&
 													annotation.xEndValue &&
