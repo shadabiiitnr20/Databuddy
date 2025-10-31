@@ -214,7 +214,7 @@ export const goalsRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	getAnalytics: publicProcedure
+		getAnalytics: publicProcedure
 		.input(analyticsDateRangeSchema)
 		.query(({ ctx, input }) => {
 			const { startDate, endDate } =
@@ -228,6 +228,7 @@ export const goalsRouter = createTRPCRouter({
 				key: cacheKey,
 				ttl: ANALYTICS_CACHE_TTL,
 				tables: ['goals'],
+				disabled: true,
 				queryFn: async () => {
 					await authorizeWebsiteAccess(ctx, input.websiteId, 'read');
 					const goal = await ctx.db
@@ -303,6 +304,7 @@ export const goalsRouter = createTRPCRouter({
 				key: cacheKey,
 				ttl: ANALYTICS_CACHE_TTL,
 				tables: ['goals'],
+				disabled: true,
 				queryFn: async () => {
 					await authorizeWebsiteAccess(ctx, input.websiteId, 'read');
 					const goalsList = await ctx.db
