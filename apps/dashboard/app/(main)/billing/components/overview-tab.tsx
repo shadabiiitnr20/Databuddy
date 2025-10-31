@@ -30,7 +30,7 @@ import { type FeatureUsage, useBillingData } from '../hooks/use-billing';
 import { CancelSubscriptionDialog } from './cancel-subscription-dialog';
 import { NoPaymentMethodDialog } from './no-payment-method-dialog';
 
-interface UsageCardProps {
+	interface UsageCardProps {
 	feature: FeatureUsage;
 	onUpgrade: () => void;
 }
