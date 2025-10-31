@@ -2,7 +2,6 @@
 
 import { Elysia } from 'elysia';
 import { logger } from './lib/logger';
-import { disconnectProducer } from './lib/producer';
 import basketRouter from './routes/basket';
 import emailRouter from './routes/email';
 import stripeRouter from './routes/stripe';
@@ -44,18 +43,6 @@ const port = process.env.PORT || 4000;
 
 console.log(`Starting basket service on port ${port}`);
 console.log(`Basket service running on http://localhost:${port}`);
-
-process.on('SIGINT', async () => {
-	console.log('Received SIGINT, shutting down...');
-	await disconnectProducer();
-	process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-	console.log('Received SIGTERM, shutting down...');
-	await disconnectProducer();
-	process.exit(0);
-});
 
 export default {
 	fetch: app.fetch,

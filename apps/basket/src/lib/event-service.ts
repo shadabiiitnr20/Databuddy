@@ -90,8 +90,7 @@ export async function insertError(
 		console.error('Failed to queue error event', {
 			error: err as Error,
 			eventId,
-		});
-		// Don't throw - event is buffered or sent async
+		});		
 	}
 }
 
@@ -264,7 +263,6 @@ export async function insertOutgoingLink(
 			error: err as Error,
 			eventId,
 		});
-		// Don't throw - event is buffered or sent async
 	}
 }
 
@@ -387,7 +385,6 @@ export async function insertTrackEvent(
 			error: err as Error,
 			eventId,
 		});
-		// Don't throw - event is buffered or sent async
 	}
 }
 
@@ -417,7 +414,6 @@ export async function insertErrorsBatch(events: ErrorEvent[]): Promise<void> {
 			error: err as Error,
 			count: events.length,
 		});
-		// Don't throw - events are buffered
 	}
 }
 
@@ -432,8 +428,7 @@ export async function insertWebVitalsBatch(
 		console.error('Failed to queue web vitals batch', {
 			error: err as Error,
 			count: events.length,
-		});
-		// Don't throw - events are buffered
+		});	
 	}
 }
 
@@ -449,7 +444,6 @@ export async function insertCustomEventsBatch(
 			error: err as Error,
 			count: events.length,
 		});
-		// Don't throw - events are buffered
 	}
 }
 
@@ -465,7 +459,6 @@ export async function insertOutgoingLinksBatch(
 			error: err as Error,
 			count: events.length,
 		});
-		// Don't throw - events are buffered
 	}
 }
 
